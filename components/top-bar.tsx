@@ -18,10 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Separator } from '@/components/ui/separator';
 
 export function TopBar() {
   return (
-    <header className="fixed right-0 top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-background px-6">
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <SidebarTrigger className="-ml-1" />
+      <Separator orientation="vertical" className="mr-2 h-4" />
       {/* Project Switcher */}
       <Select defaultValue="project-1">
         <SelectTrigger className="w-[180px]">
