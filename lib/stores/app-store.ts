@@ -4,12 +4,26 @@
  */
 
 import { create } from 'zustand';
-import { Task, Project, Insight } from '@/lib/api/types';
+import { Task, Project, Insight, UserStory, Epic, Sprint, TeamMember, Dependency } from '@/lib/api/types';
 
 interface AppState {
   // Current project
   currentProject: Project | null;
   setCurrentProject: (project: Project | null) => void;
+
+  // Epics
+  epics: Epic[];
+  setEpics: (epics: Epic[]) => void;
+  addEpic: (epic: Epic) => void;
+  updateEpic: (id: string, updates: Partial<Epic>) => void;
+  deleteEpic: (id: string) => void;
+
+  // User Stories
+  stories: UserStory[];
+  setStories: (stories: UserStory[]) => void;
+  addStory: (story: UserStory) => void;
+  updateStory: (id: string, updates: Partial<UserStory>) => void;
+  deleteStory: (id: string) => void;
 
   // Tasks
   tasks: Task[];
@@ -17,6 +31,23 @@ interface AppState {
   addTask: (task: Task) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
+
+  // Sprints
+  sprints: Sprint[];
+  setSprints: (sprints: Sprint[]) => void;
+  addSprint: (sprint: Sprint) => void;
+  updateSprint: (id: string, updates: Partial<Sprint>) => void;
+  deleteSprint: (id: string) => void;
+
+  // Team Members
+  teamMembers: TeamMember[];
+  setTeamMembers: (members: TeamMember[]) => void;
+
+  // Dependencies
+  dependencies: Dependency[];
+  setDependencies: (deps: Dependency[]) => void;
+  addDependency: (dep: Dependency) => void;
+  deleteDependency: (id: string) => void;
 
   // Insights
   insights: Insight[];

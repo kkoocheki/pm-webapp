@@ -2,6 +2,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { GanttChart } from '@/components/gantt-chart';
+import { TaskKanbanBoard } from '@/components/kanban-board';
+import { columns } from './components/columns';
+import { DataTable } from './components/data-table';
+import { tasks } from './data/tasks';
 
 export default function IssuesPage() {
   return (
@@ -30,13 +35,11 @@ export default function IssuesPage() {
             <CardHeader>
               <CardTitle>Task List</CardTitle>
               <CardDescription>
-                View all tasks in a list format
+                View all tasks in a list format with sorting and filtering
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Task list component will be implemented in Phase 3
-              </p>
+              <DataTable data={tasks} columns={columns} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -49,9 +52,7 @@ export default function IssuesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Kanban board component will be implemented in Phase 3
-              </p>
+              <TaskKanbanBoard />
             </CardContent>
           </Card>
         </TabsContent>
@@ -64,9 +65,7 @@ export default function IssuesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Timeline view will be implemented in Phase 3
-              </p>
+              <GanttChart />
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Gantt, Willow } from "@svar-ui/react-gantt";
 import "@svar-ui/react-gantt/style.css";
