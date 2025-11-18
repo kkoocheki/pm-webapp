@@ -1,6 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ZoomIn, ZoomOut } from 'lucide-react';
+import { GanttChart } from '@/components/gantt-chart';
 
 export default function TimelinePage() {
   return (
@@ -26,24 +26,17 @@ export default function TimelinePage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Gantt Chart</CardTitle>
-          <CardDescription>
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">Gantt Chart</h2>
+          <p className="text-sm text-muted-foreground">
             Interactive timeline showing task schedules and dependencies
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
-            <div className="text-center">
-              <p className="text-sm font-medium">Gantt Chart Component</p>
-              <p className="text-xs text-muted-foreground">
-                Will be implemented in Phase 3 using react-gantt-chart
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </p>
+        </div>
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <GanttChart />
+        </div>
+      </div>
     </div>
   );
 }

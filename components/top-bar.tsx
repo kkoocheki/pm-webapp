@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
+import { ModeToggle } from '@/components/mode-toggle';
 
 export function TopBar() {
   return (
@@ -54,6 +55,9 @@ export function TopBar() {
           <Bell className="h-5 w-5" />
           <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-600" />
         </Button>
+
+        {/* Theme Toggle */}
+        <ModeToggle />
 
         {/* User Menu */}
         <DropdownMenu>
