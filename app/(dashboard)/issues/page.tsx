@@ -1,3 +1,5 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -6,9 +8,13 @@ import { GanttChart } from '@/components/gantt-chart';
 import { TaskKanbanBoard } from '@/components/kanban-board';
 import { columns } from './components/columns';
 import { DataTable } from './components/data-table';
-import { tasks } from './data/tasks';
+import { useAppStore } from '@/lib/stores/app-store';
+import { tasksToTableFormat } from '@/lib/adapters/table-adapter';
 
 export default function IssuesPage() {
+  const rdfTasks = useAppStore((state) => state.tasks);
+  const tasks = tasksToTableFormat(rdfTasks);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -48,7 +54,7 @@ export default function IssuesPage() {
             <CardHeader>
               <CardTitle>Kanban Board</CardTitle>
               <CardDescription>
-                Drag and drop tasks across different statuses
+                Drag and drop tasks between status columns
               </CardDescription>
             </CardHeader>
             <CardContent>

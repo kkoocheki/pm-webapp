@@ -69,35 +69,92 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   // Initial state
   currentProject: null,
+  epics: [],
+  stories: [],
   tasks: [],
+  sprints: [],
+  teamMembers: [],
+  dependencies: [],
   insights: [],
   sidebarCollapsed: false,
   commandPaletteOpen: false,
   chatPanelOpen: false,
   isLoading: false,
 
-  // Actions
+  // Project Actions
   setCurrentProject: (project) => set({ currentProject: project }),
 
+  // Epic Actions
+  setEpics: (epics) => set({ epics }),
+  addEpic: (epic) => set((state) => ({ epics: [...state.epics, epic] })),
+  updateEpic: (id, updates) =>
+    set((state) => ({
+      epics: state.epics.map((epic) =>
+        epic.id === id ? { ...epic, ...updates } : epic
+      ),
+    })),
+  deleteEpic: (id) =>
+    set((state) => ({
+      epics: state.epics.filter((epic) => epic.id !== id),
+    })),
+
+  // User Story Actions
+  setStories: (stories) => set({ stories }),
+  addStory: (story) => set((state) => ({ stories: [...state.stories, story] })),
+  updateStory: (id, updates) =>
+    set((state) => ({
+      stories: state.stories.map((story) =>
+        story.id === id ? { ...story, ...updates } : story
+      ),
+    })),
+  deleteStory: (id) =>
+    set((state) => ({
+      stories: state.stories.filter((story) => story.id !== id),
+    })),
+
+  // Task Actions
   setTasks: (tasks) => set({ tasks }),
-
-  addTask: (task) =>
-    set((state) => ({ tasks: [...state.tasks, task] })),
-
+  addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
   updateTask: (id, updates) =>
     set((state) => ({
       tasks: state.tasks.map((task) =>
         task.id === id ? { ...task, ...updates } : task
       ),
     })),
-
   deleteTask: (id) =>
     set((state) => ({
       tasks: state.tasks.filter((task) => task.id !== id),
     })),
 
+  // Sprint Actions
+  setSprints: (sprints) => set({ sprints }),
+  addSprint: (sprint) => set((state) => ({ sprints: [...state.sprints, sprint] })),
+  updateSprint: (id, updates) =>
+    set((state) => ({
+      sprints: state.sprints.map((sprint) =>
+        sprint.id === id ? { ...sprint, ...updates } : sprint
+      ),
+    })),
+  deleteSprint: (id) =>
+    set((state) => ({
+      sprints: state.sprints.filter((sprint) => sprint.id !== id),
+    })),
+
+  // Team Member Actions
+  setTeamMembers: (teamMembers) => set({ teamMembers }),
+
+  // Dependency Actions
+  setDependencies: (dependencies) => set({ dependencies }),
+  addDependency: (dep) => set((state) => ({ dependencies: [...state.dependencies, dep] })),
+  deleteDependency: (id) =>
+    set((state) => ({
+      dependencies: state.dependencies.filter((dep) => dep.id !== id),
+    })),
+
+  // Insight Actions
   setInsights: (insights) => set({ insights }),
 
+  // UI Actions
   toggleSidebar: () =>
     set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 

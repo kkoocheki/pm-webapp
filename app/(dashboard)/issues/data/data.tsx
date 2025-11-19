@@ -30,8 +30,8 @@ export const labels = [
 
 export const statuses = [
   {
-    value: "todo",
-    label: "To Do",
+    value: "not-started",
+    label: "Not Started",
     icon: Circle,
   },
   {
@@ -40,9 +40,14 @@ export const statuses = [
     icon: Timer,
   },
   {
-    value: "done",
-    label: "Done",
+    value: "completed",
+    label: "Completed",
     icon: CheckCircle,
+  },
+  {
+    value: "blocked",
+    label: "Blocked",
+    icon: Circle,
   },
 ]
 
