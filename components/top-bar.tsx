@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Search, Bell, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,20 @@ import { Separator } from '@/components/ui/separator';
 import { ModeToggle } from '@/components/mode-toggle';
 
 export function TopBar() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <div className="h-4 w-4 animate-pulse bg-muted rounded" />
+      </header>
+    );
+  }
+
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
