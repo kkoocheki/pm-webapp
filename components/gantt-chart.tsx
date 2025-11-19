@@ -1,7 +1,6 @@
 'use client';
 
 import { Gantt, Willow } from '@svar-ui/react-gantt';
-import '@svar-ui/react-gantt/all.css';
 import { useAppStore } from '@/lib/stores/app-store';
 import { storiesAndTasksToGanttFormat } from '@/lib/adapters/gantt-adapter';
 
