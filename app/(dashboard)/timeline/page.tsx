@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-import { GanttChart } from '@/components/gantt-chart';
->>>>>>> f829b6cdc5257b08e6fabe1bfe02eacfa1ed44fc
 import { Button } from '@/components/ui/button';
 import { Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { GanttChart } from '@/components/gantt-chart';
@@ -30,7 +26,6 @@ export default function TimelinePage() {
         </div>
       </div>
 
-<<<<<<< HEAD
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold">Gantt Chart</h2>
@@ -42,9 +37,6 @@ export default function TimelinePage() {
           <GanttChart />
         </div>
       </div>
-=======
-      <GanttChart />
->>>>>>> f829b6cdc5257b08e6fabe1bfe02eacfa1ed44fc
     </div>
   );
 }

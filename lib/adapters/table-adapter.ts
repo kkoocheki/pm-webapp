@@ -4,7 +4,7 @@
  */
 
 import { Task as RDFTask } from '@/lib/api/types';
-import { Task as TableTask } from '../app/(dashboard)/issues/data/schema';
+import { Task as TableTask } from '@/app/(dashboard)/issues/data/schema';
 
 /**
  * Convert RDF tasks to data table format
