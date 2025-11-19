@@ -1,7 +1,7 @@
 'use client';
 
+import { useMemo, useEffect, useState } from 'react';
 import { Gantt, Willow } from '@svar-ui/react-gantt';
-import '@svar-ui/react-gantt/all.css';
 import { useAppStore } from '@/lib/stores/app-store';
 import { storiesAndTasksToGanttFormat } from '@/lib/adapters/gantt-adapter';
 
@@ -18,11 +18,27 @@ const columns = [
 ];
 
 export function GanttChart() {
+  const [mounted, setMounted] = useState(false);
   const stories = useAppStore((state) => state.stories);
   const tasks = useAppStore((state) => state.tasks);
   const dependencies = useAppStore((state) => state.dependencies);
 
-  const ganttData = storiesAndTasksToGanttFormat(stories, tasks, dependencies);
+  const ganttData = useMemo(
+    () => storiesAndTasksToGanttFormat(stories, tasks, dependencies),
+    [stories, tasks, dependencies]
+  );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="h-[600px] w-full rounded-lg border flex items-center justify-center text-muted-foreground">
+        Loading Gantt chart...
+      </div>
+    );
+  }
 
   return (
     <Willow>
