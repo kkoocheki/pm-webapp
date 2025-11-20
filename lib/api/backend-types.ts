@@ -85,3 +85,94 @@ export interface BackendImportResult {
   dependencies_created: number;
   sprints_created: number;
 }
+
+// Analytics types
+export interface CriticalPathResult {
+  critical_path: CriticalPathTask[];
+  total_duration: number;
+  project_start: string;
+  project_end: string;
+}
+
+export interface CriticalPathTask {
+  iri: string;
+  name: string;
+  early_start: number;
+  early_finish: number;
+  late_start: number;
+  late_finish: number;
+  total_float: number;
+  is_critical: boolean;
+  duration: number;
+}
+
+// Reasoning types
+export type ReasonerType = 'rdfs' | 'owl_dl' | 'owl_full' | 'jena_rules' | 'combined';
+
+export interface ReasoningRequest {
+  project_slug: string;
+  reasoner_type?: ReasonerType;
+  include_inferred_only?: boolean;
+}
+
+export interface ReasoningResponse {
+  project: string;
+  reasoner_type: string;
+  total_triples: number;
+  inferred_triples: number;
+  done_stories: string[];
+  critical_tasks: string[];
+  blocked_tasks: BlockedTaskInfo[];
+  success: boolean;
+}
+
+export interface BlockedTaskInfo {
+  task: string;
+  blocker: string;
+}
+
+export interface UserStoryStatus {
+  iri: string;
+  name?: string | null;
+  is_done: boolean;
+  story_points?: number | null;
+  has_technical_debt?: boolean | null;
+}
+
+export interface TaskStatus {
+  iri: string;
+  name?: string | null;
+  is_critical: boolean;
+  is_blocked: boolean;
+  blocked_by: string[];
+  total_float?: number | null;
+}
+
+export interface SprintMetrics {
+  iri: string;
+  name?: string | null;
+  completed_story_points?: number | null;
+  goal_achieved?: boolean | null;
+  is_at_risk?: boolean | null;
+  has_blocked_critical_tasks?: boolean | null;
+}
+
+export interface InferenceRule {
+  name: string;
+  description: string;
+  example?: string | null;
+}
+
+export interface OntologyValidation {
+  project: string;
+  valid: boolean;
+  errors: string[];
+  error_count: number;
+}
+
+export interface ReasoningHealth {
+  status: string;
+  ontology_loaded: boolean;
+  rules_loaded: boolean;
+  error?: string;
+}

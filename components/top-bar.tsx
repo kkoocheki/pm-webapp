@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Search, Bell, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ImportDialog } from '@/components/import-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +66,9 @@ export function TopBar() {
 
       {/* Right Section */}
       <div className="ml-auto flex items-center gap-2">
+        {/* Import Dialog */}
+        <ImportDialog />
+
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />

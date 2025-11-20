@@ -25,7 +25,19 @@ export const ENDPOINTS = {
   link: (projectSlug: string, linkToken: string) => `/api/projects/${projectSlug}/links/${linkToken}`,
 
   // Analytics
-  analytics: (projectSlug: string) => `/api/projects/${projectSlug}/analytics`,
+  criticalPath: (projectSlug: string) => `/api/projects/${projectSlug}/critical-path`,
+
+  // Import/Export
+  importTtl: '/api/import/ttl',
+
+  // Reasoning
+  reasoningApply: '/api/reasoning/apply',
+  reasoningUserStories: (projectSlug: string) => `/api/reasoning/user-stories/${projectSlug}`,
+  reasoningTasks: (projectSlug: string) => `/api/reasoning/tasks/${projectSlug}`,
+  reasoningSprint: (projectSlug: string, sprintIri: string) => `/api/reasoning/sprints/${projectSlug}/${sprintIri}`,
+  reasoningRules: '/api/reasoning/rules',
+  reasoningValidate: (projectSlug: string) => `/api/reasoning/validate/${projectSlug}`,
+  reasoningHealth: '/api/reasoning/health',
 
   // Health
   health: '/health',

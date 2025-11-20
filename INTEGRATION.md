@@ -244,3 +244,205 @@ The system maintains type safety throughout:
 - [ ] Enhance error recovery with retry mechanisms
 - [ ] Add data validation with Zod
 - [ ] Implement CRUD operations for all entity types (currently only tasks)
+
+## Advanced Features
+
+### Import/Export
+
+The application now supports importing RDF Turtle (.ttl) files to create projects:
+
+**Import Dialog** (`components/import-dialog.tsx`)
+- Upload .ttl files containing RDF project data
+- Auto-generates project name from filename
+- Option to overwrite existing projects
+- Shows import status and statistics (tasks created, dependencies created)
+
+**Usage:**
+1. Click "Import Project" button in the top bar
+2. Select a .ttl file (supports both PM and SRO ontology namespaces)
+3. Provide a project name or use the auto-generated one
+4. Choose whether to overwrite existing data
+5. View import results (tasks, dependencies, sprints created)
+
+**API Endpoint:**
+- `POST /api/import/ttl` - Upload and import Turtle file
+
+### Analytics - Critical Path Method (CPM)
+
+The **Dependencies** page now displays real-time Critical Path Method analysis:
+
+**Features:**
+- Total project duration calculation
+- Critical path identification (tasks with zero float)
+- Early start/finish times
+- Late start/finish times
+- Total float calculation for each task
+- Visual highlighting of critical tasks
+
+**API Endpoint:**
+- `GET /api/projects/{slug}/critical-path` - Compute CPM analysis
+
+**Critical Path Metrics:**
+- **Total Duration:** Minimum time to complete the project
+- **Critical Tasks:** Tasks that cannot be delayed without delaying the project
+- **Float:** Slack time available before a task delays the project
+- **Early/Late Times:** Scheduling constraints for each task
+
+### Semantic Reasoning Engine
+
+The **Insights** page now features a complete semantic reasoning system powered by OWL 2 RL, RDFS, and Jena Rules:
+
+**Reasoning Capabilities:**
+
+1. **Blocked Task Detection**
+   - Automatically identifies tasks blocked by incomplete dependencies
+   - Shows which tasks are blocking others
+   - Transitive dependency reasoning
+
+2. **Critical Path Tasks**
+   - Infers critical tasks based on float calculations
+   - Identifies tasks on the critical path
+   - Risk analysis for project delays
+
+3. **User Story Completion**
+   - Determines which stories are "done" based on accepted deliverables
+   - Calculates completed story points
+   - Identifies stories with technical debt
+
+4. **Inference Rules** (8 rules):
+   - Done User Story detection
+   - Successfully Performed Task detection
+   - Epic Completion inference
+   - Blocked Task Detection
+   - Critical Path Task identification
+   - Sprint Goal Achievement
+   - Technical Debt Detection
+   - Transitive Dependency reasoning
+
+**Reasoner Types:**
+- `rdfs` - RDFS reasoning only
+- `owl_dl` - OWL DL reasoning
+- `owl_full` - OWL Full reasoning
+- `jena_rules` - Custom Jena rules
+- `combined` - All reasoning methods (recommended)
+
+**API Endpoints:**
+- `POST /api/reasoning/apply` - Apply reasoning to a project
+- `GET /api/reasoning/user-stories/{slug}` - Get story status with inferences
+- `GET /api/reasoning/tasks/{slug}` - Get task status with inferences
+- `GET /api/reasoning/sprints/{slug}/{iri}` - Get sprint metrics
+- `GET /api/reasoning/rules` - List all inference rules
+- `GET /api/reasoning/validate/{slug}` - Validate ontology consistency
+- `GET /api/reasoning/health` - Check reasoning engine health
+
+**Usage:**
+1. Navigate to the Insights page
+2. Click "Run Reasoning" to apply semantic inference
+3. View inferred insights:
+   - Critical path tasks
+   - Blocked tasks with blockers
+   - Done user stories
+   - Technical debt indicators
+4. See reasoning statistics (total triples, inferred triples)
+
+### React Query Hooks
+
+**Advanced Features Hooks** (`lib/hooks/use-advanced-features.ts`):
+
+```typescript
+// Import
+useImportTtl() - Import TTL files
+
+// Analytics
+useCriticalPath(projectSlug) - Get critical path analysis
+
+// Reasoning
+useApplyReasoning() - Run semantic reasoning
+useTaskStatus(projectSlug) - Get task insights
+useUserStoryStatus(projectSlug) - Get story insights
+useSprintMetrics(projectSlug, sprintIri) - Get sprint metrics
+useInferenceRules() - List available rules
+useValidateOntology(projectSlug) - Validate consistency
+useReasoningHealth() - Check engine health
+```
+
+## Updated Data Types
+
+**Analytics Types:**
+- `CriticalPathResult` - CPM analysis results
+- `CriticalPathTask` - Individual task on critical path with timing data
+
+**Reasoning Types:**
+- `ReasoningRequest` - Reasoning configuration
+- `ReasoningResponse` - Reasoning results with inferences
+- `UserStoryStatus` - Story status with semantic inferences
+- `TaskStatus` - Task status with blocking info and criticality
+- `SprintMetrics` - Computed sprint metrics
+- `InferenceRule` - Rule documentation
+- `OntologyValidation` - Consistency check results
+- `ReasoningHealth` - Engine health status
+
+## Pages Updated
+
+### Insights Page (`/insights`)
+- Interactive reasoning engine interface
+- Real-time metrics (critical tasks, blocked tasks, done stories, technical debt)
+- Detailed lists of blocked and critical tasks
+- Done user stories with story points
+- Active inference rules display
+- Reasoning engine health status
+
+### Dependencies Page (`/dependencies`)
+- Full Critical Path Method (CPM) analysis
+- Project duration and timeline
+- Detailed task scheduling information
+- Early/late start and finish times
+- Float calculations
+- Educational content about CPM concepts
+
+### Top Bar
+- Import Project button for easy access to TTL file import
+- Accessible from any page in the dashboard
+
+## Technology Stack Additions
+
+- **Semantic Reasoning:** OWL 2 RL + RDFS + Jena Rules
+- **Knowledge Graph:** Apache Jena Fuseki (RDF triple store)
+- **Ontologies:** PM Ontology + Scrum Reference Ontology (SRO)
+- **Import Format:** RDF Turtle (.ttl)
+
+## Future Enhancements
+
+- [ ] Export functionality (export project to TTL)
+- [ ] Real-time reasoning updates via WebSocket
+- [ ] Custom SPARQL query interface
+- [ ] Dependency graph visualization with reactflow
+- [ ] Advanced reasoning configurations
+- [ ] Historical reasoning analysis
+- [ ] Sprint-level reasoning insights
+- [ ] Team performance analytics
+
+## Complete Feature List
+
+✅ **Core Features:**
+- Project, Task, Link CRUD operations
+- Shared data management (Zustand + React Query)
+- Three synchronized views (Kanban, Table, Gantt)
+- Optimistic updates
+
+✅ **Advanced Features:**
+- TTL file import
+- Critical Path Method (CPM) analysis
+- Semantic reasoning engine (8 inference rules)
+- Blocked task detection
+- User story completion inference
+- Technical debt identification
+- Ontology validation
+
+✅ **UI Components:**
+- Import dialog with file upload
+- Critical path visualization
+- Reasoning insights dashboard
+- Health monitoring
+- Error handling and loading states
+

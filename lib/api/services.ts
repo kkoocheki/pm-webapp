@@ -13,6 +13,16 @@ import {
   BackendTaskCreate,
   BackendLink,
   BackendLinkCreate,
+  BackendImportResult,
+  CriticalPathResult,
+  ReasoningRequest,
+  ReasoningResponse,
+  UserStoryStatus,
+  TaskStatus,
+  SprintMetrics,
+  InferenceRule,
+  OntologyValidation,
+  ReasoningHealth,
 } from './backend-types';
 
 // ==================== Project Services ====================
@@ -176,6 +186,117 @@ export const linkService = {
   },
 };
 
+// ==================== Import/Export Services ====================
+
+export const importService = {
+  /**
+   * Import a Turtle (.ttl) file to create a project
+   */
+  async importTtl(file: File, projectName: string, overwrite: boolean = false): Promise<BackendImportResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('project_name', projectName);
+    formData.append('overwrite', String(overwrite));
+
+    const response = await fetch(`${API_CONFIG.baseURL}${ENDPOINTS.importTtl}`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Import failed');
+    }
+
+    return response.json();
+  },
+};
+
+// ==================== Analytics Services ====================
+
+export const analyticsService = {
+  /**
+   * Get critical path analysis for a project
+   */
+  async getCriticalPath(projectSlug: string): Promise<CriticalPathResult> {
+    const response = await apiClient.get<CriticalPathResult>(
+      ENDPOINTS.criticalPath(projectSlug)
+    );
+    return response;
+  },
+};
+
+// ==================== Reasoning Services ====================
+
+export const reasoningService = {
+  /**
+   * Apply semantic reasoning to a project
+   */
+  async applyReasoning(request: ReasoningRequest): Promise<ReasoningResponse> {
+    const response = await apiClient.post<ReasoningResponse>(
+      ENDPOINTS.reasoningApply,
+      request
+    );
+    return response;
+  },
+
+  /**
+   * Get reasoning-inferred status for all user stories
+   */
+  async getUserStoryStatus(projectSlug: string): Promise<UserStoryStatus[]> {
+    const response = await apiClient.get<UserStoryStatus[]>(
+      ENDPOINTS.reasoningUserStories(projectSlug)
+    );
+    return response;
+  },
+
+  /**
+   * Get reasoning-inferred status for all tasks
+   */
+  async getTaskStatus(projectSlug: string): Promise<TaskStatus[]> {
+    const response = await apiClient.get<TaskStatus[]>(
+      ENDPOINTS.reasoningTasks(projectSlug)
+    );
+    return response;
+  },
+
+  /**
+   * Get reasoning-computed metrics for a sprint
+   */
+  async getSprintMetrics(projectSlug: string, sprintIri: string): Promise<SprintMetrics> {
+    const response = await apiClient.get<SprintMetrics>(
+      ENDPOINTS.reasoningSprint(projectSlug, sprintIri)
+    );
+    return response;
+  },
+
+  /**
+   * List all available inference rules
+   */
+  async listInferenceRules(): Promise<InferenceRule[]> {
+    const response = await apiClient.get<InferenceRule[]>(ENDPOINTS.reasoningRules);
+    return response;
+  },
+
+  /**
+   * Validate ontology consistency
+   */
+  async validateOntology(projectSlug: string): Promise<OntologyValidation> {
+    const response = await apiClient.get<OntologyValidation>(
+      ENDPOINTS.reasoningValidate(projectSlug)
+    );
+    return response;
+  },
+
+  /**
+   * Check reasoning engine health
+   */
+  async checkHealth(): Promise<ReasoningHealth> {
+    const response = await apiClient.get<ReasoningHealth>(ENDPOINTS.reasoningHealth);
+    return response;
+  },
+};
+
 // ==================== Health Check ====================
 
 export const healthService = {
@@ -200,5 +321,8 @@ export const api = {
   projects: projectService,
   tasks: taskService,
   links: linkService,
+  import: importService,
+  analytics: analyticsService,
+  reasoning: reasoningService,
   health: healthService,
 };
