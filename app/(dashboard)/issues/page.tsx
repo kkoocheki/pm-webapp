@@ -30,8 +30,8 @@ export default function IssuesPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="list" className="w-full">
-        <TabsList>
+      <Tabs defaultValue="list" className="w-full" suppressHydrationWarning>
+        <TabsList suppressHydrationWarning>
           <TabsTrigger value="list">List View</TabsTrigger>
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -71,7 +71,11 @@ export default function IssuesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <GanttChart />
+              <div className="gantt-cell">
+                <div className="gantt-box">
+                  <GanttChart />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

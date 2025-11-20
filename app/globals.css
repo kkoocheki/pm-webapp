@@ -121,6 +121,26 @@
   }
 }
 
+/* Gantt chart wrapper - exact pattern from GanttMultiple demo */
+.gantt-cell {
+  height: 600px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.gantt-box {
+  overflow: hidden;
+  flex: 1;
+  min-height: 0; /* Prevents flex child from overflowing */
+}
+
+/* Ensure Willow wrapper fills container */
+.gantt-box > div {
+  height: 100%;
+  width: 100%;
+}
+
 /* Apply WillowDark theme styles when in dark mode */
 .dark .wx-willow-theme {
   color-scheme: dark;
@@ -193,3 +213,5 @@
   /* sidebar */
   --wx-sidebar-close-icon: #384047;
 }
+
+
