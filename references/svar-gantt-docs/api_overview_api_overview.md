@@ -1,0 +1,25 @@
+# API Overview
+
+**Source:** https://docs.svar.dev/react/gantt/api/overview/api_overview
+
+---
+
+- 
+
+- APIOn this page
+# API overview
+
+## Gantt properties[​](#gantt-properties)
+
+[activeTask](/react/gantt/api/properties/activetask)Optional.Defines an active task for which the Editor dialog is opened[autoScale](/react/gantt/api/properties/autoscale)Optional. Allows the timescale to change dynamically its start/end dates[cellBorders](/react/gantt/api/properties/cellborders)Optional. Defines borders style in the Gantt chart[cellHeight](/react/gantt/api/properties/cellheight)Optional. Defines the height of a cell in pixels[cellWidth](/react/gantt/api/properties/cellwidth)Optional. Defines the width of a cell in pixels[columns](/react/gantt/api/properties/columns)Optional. An array of objects with configuration parameters for columns in the grid area[durationUnit](/react/gantt/api/properties/durationunit)Optional. Defines duration unit for tasks[end](/react/gantt/api/properties/end)Optional. Sets the end date of the timescale[highlightTime](/react/gantt/api/properties/highlighttime)Optional. Highlights specific time areas in the chart[lengthUnit](/react/gantt/api/properties/lengthunit)Optional. Defines the minimal unit for task bars (the task length) in a chart[links](/react/gantt/api/properties/links)Optional. Defines links between tasks in Gantt[readonly](/react/gantt/api/properties/readonly)Optional. Prevents making changes to the data in Gantt[scaleHeight](/react/gantt/api/properties/scaleheight)Optional. Defines the height of the header cell in pixels[scales](/react/gantt/api/properties/scales)Optional. Defines the timescale of Gantt[selected](/react/gantt/api/properties/selected)Optional. Marks tasks as selected[start](/react/gantt/api/properties/start)Optional. Sets the start date of the timescale[tasks](/react/gantt/api/properties/tasks)Optional. Defines tasks in Gantt[taskTemplate](/react/gantt/api/properties/tasktemplate)Optional. Defines your own template for tasks bars[tasks](/react/gantt/api/properties/tasktypes)Optional. An array of objects containing the tasks types data[zoom](/react/gantt/api/properties/zoom)Enables zooming in Gantt
+
+## Gantt actions[​](#gantt-actions)
+
+[add-link](/react/gantt/api/actions/add-link)Fires when adding a link[add-task](/react/gantt/api/actions/add-task)Fires when adding a new task[copy-task](/react/gantt/api/actions/copy-task)Fires when copying a task[delete-link](/react/gantt/api/actions/delete-link)Fires when deleting a link[delete-task](/react/gantt/api/actions/delete-task)Fires when deleting a task[drag-task](/react/gantt/api/actions/drag-task)Fires when dragging a task[expand-scale](/react/gantt/api/actions/expand-scale)Fires when the scale does not fill all free space in the chart and it&#x27;s required to expand scale boundaries[hotkey](/react/gantt/api/actions/hotkey)Fires when applying a hotkey[indent-task](/react/gantt/api/actions/indent-task)Fires when indenting a task[move-task](/react/gantt/api/actions/move-task)Fires when moving a task[open-task](/react/gantt/api/actions/open-task)Fires when expanding a branch of tasks[provide-data](/react/gantt/api/actions/provide-data)Provides new data for a branch[render-data](/react/gantt/api/actions/render-data)Fires when data is rendered when scrolling[request-data](/react/gantt/api/actions/request-data)Fires when data for a task branch is requested[scroll-chart](/react/gantt/api/actions/scroll-chart)Fires when a chart is scrolled[select-task](/react/gantt/api/actions/select-task)Fires when selecting a task[show-editor](/react/gantt/api/actions/show-editor)Fires when opening the Editor dialog for a task[sort-tasks](/react/gantt/api/actions/sort-tasks)Fires when sorting tasks[update-link](/react/gantt/api/actions/update-link)Fires when updating a link[update-task](/react/gantt/api/actions/update-task)Fires when updating a task[zoom-scale](/react/gantt/api/actions/zoom-scale)Fires when zooming a chart
+
+## Gantt methods[​](#gantt-methods)
+
+[api.detach()](/react/gantt/api/methods/detach)Allows removing/detaching action handlers[api.exec()](/react/gantt/api/methods/exec)Allows triggering Gantt actions[api.getReactiveState()](/react/gantt/api/methods/getreactivestate)Gets the state object with the reactive properties of Gantt[api.getState()](/react/gantt/api/methods/getstate)Gets the state object that stores current values of most Gantt properties[api.getStores()](/react/gantt/api/methods/getstores)Gets an object with the DataStore properties of Gantt[api.getTask(id)](/react/gantt/api/methods/gettask)Gets an object with the task configuration[api.intercept()](/react/gantt/api/methods/intercept)Allows intercepting and blocking/modifying actions[api.on()](/react/gantt/api/methods/on)Allows attaching a handler to the inner events[api.setNext()](/react/gantt/api/methods/setnext)Allows adding some action into the Event Bus orderPreviousBackendNextHow to access Gantt API
+- [Gantt properties](#gantt-properties)
+- [Gantt actions](#gantt-actions)
+- [Gantt methods](#gantt-methods)
