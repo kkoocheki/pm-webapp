@@ -6,7 +6,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/services';
 import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
-import { ReasoningRequest } from '@/lib/api/backend-types';
+import { ReasoningRequest, JiraImportRequest } from '@/lib/api/backend-types';
 
 // ==================== Import Hooks ====================
 
@@ -28,6 +28,44 @@ export function useImportTtl() {
     }) => {
       return api.import.importTtl(file, projectName, overwrite);
     },
+    onSuccess: () => {
+      // Invalidate project list to show new project
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+}
+
+/**
+ * Hook to list Jira projects (for project selection)
+ */
+export function useListJiraProjects({
+  jiraUrl,
+  email,
+  apiToken,
+  enabled = false,
+}: {
+  jiraUrl: string;
+  email: string;
+  apiToken: string;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ['jira-projects', jiraUrl, email],
+    queryFn: () => api.import.listJiraProjects(jiraUrl, email, apiToken),
+    enabled: enabled && !!jiraUrl && !!email && !!apiToken,
+    staleTime: 300000, // 5 minutes
+    retry: false, // Don't retry on auth failures
+  });
+}
+
+/**
+ * Hook to import from Jira
+ */
+export function useImportJira() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: JiraImportRequest) => api.import.importJira(request),
     onSuccess: () => {
       // Invalidate project list to show new project
       queryClient.invalidateQueries({ queryKey: ['projects'] });

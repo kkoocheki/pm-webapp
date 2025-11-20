@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -23,8 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
-import { api } from '@/lib/api/services';
-import { JiraProject, JiraImportResult } from '@/lib/api/backend-types';
+import { useListJiraProjects, useImportJira } from '@/lib/hooks/use-advanced-features';
 
 interface JiraImportDialogProps {
   trigger?: React.ReactNode;
@@ -38,64 +37,50 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
   const [jiraUrl, setJiraUrl] = useState('');
   const [email, setEmail] = useState('');
   const [apiToken, setApiToken] = useState('');
-  const [testingConnection, setTestingConnection] = useState(false);
-  const [connectionTested, setConnectionTested] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [shouldFetchProjects, setShouldFetchProjects] = useState(false);
 
   // Step 2: Project Selection
-  const [projects, setProjects] = useState<JiraProject[]>([]);
   const [selectedProjectKey, setSelectedProjectKey] = useState('');
-  const [loadingProjects, setLoadingProjects] = useState(false);
 
   // Step 3: Configuration
   const [projectName, setProjectName] = useState('');
   const [includeSubtasks, setIncludeSubtasks] = useState(true);
   const [includeEpics, setIncludeEpics] = useState(true);
 
-  // Step 4: Import
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<JiraImportResult | null>(null);
-  const [importError, setImportError] = useState<string | null>(null);
+  // React Query hooks
+  const {
+    data: projects = [],
+    isLoading: loadingProjects,
+    isError: projectsFetchError,
+    error: projectsError,
+    isSuccess: projectsFetchSuccess,
+  } = useListJiraProjects({
+    jiraUrl,
+    email,
+    apiToken,
+    enabled: shouldFetchProjects,
+  });
+
+  const importMutation = useImportJira();
 
   const resetState = () => {
     setStep(1);
     setJiraUrl('');
     setEmail('');
     setApiToken('');
-    setTestingConnection(false);
-    setConnectionTested(false);
-    setConnectionError(null);
-    setProjects([]);
+    setShouldFetchProjects(false);
     setSelectedProjectKey('');
-    setLoadingProjects(false);
     setProjectName('');
     setIncludeSubtasks(true);
     setIncludeEpics(true);
-    setImporting(false);
-    setImportResult(null);
-    setImportError(null);
   };
 
-  const handleTestConnection = async () => {
-    setTestingConnection(true);
-    setConnectionError(null);
-    setConnectionTested(false);
-
-    try {
-      const fetchedProjects = await api.import.listJiraProjects(jiraUrl, email, apiToken);
-      setProjects(fetchedProjects);
-      setConnectionTested(true);
-      setConnectionError(null);
-    } catch (error) {
-      setConnectionError(error instanceof Error ? error.message : 'Failed to connect to Jira');
-      setConnectionTested(false);
-    } finally {
-      setTestingConnection(false);
-    }
+  const handleTestConnection = () => {
+    setShouldFetchProjects(true);
   };
 
   const handleNextToProjectSelection = () => {
-    if (connectionTested && projects.length > 0) {
+    if (projectsFetchSuccess && projects.length > 0) {
       setStep(2);
     }
   };
@@ -111,11 +96,8 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
   };
 
   const handleImport = async () => {
-    setImporting(true);
-    setImportError(null);
-
     try {
-      const result = await api.import.importJira({
+      await importMutation.mutateAsync({
         jira_url: jiraUrl,
         email,
         api_token: apiToken,
@@ -124,13 +106,9 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
         include_subtasks: includeSubtasks,
         include_epics: includeEpics,
       });
-
-      setImportResult(result);
       setStep(4);
     } catch (error) {
-      setImportError(error instanceof Error ? error.message : 'Import failed');
-    } finally {
-      setImporting(false);
+      // Error is handled by the mutation
     }
   };
 
@@ -208,10 +186,10 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
 
               <Button
                 onClick={handleTestConnection}
-                disabled={!jiraUrl || !email || !apiToken || testingConnection}
+                disabled={!jiraUrl || !email || !apiToken || loadingProjects}
                 className="w-full"
               >
-                {testingConnection ? (
+                {loadingProjects ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Testing Connection...
@@ -221,7 +199,7 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
                 )}
               </Button>
 
-              {connectionTested && (
+              {projectsFetchSuccess && (
                 <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
                   <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
                   <div className="text-sm">
@@ -231,12 +209,14 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
                 </div>
               )}
 
-              {connectionError && (
+              {projectsFetchError && (
                 <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
                   <div className="text-sm">
                     <p className="font-medium text-red-900">Connection Failed</p>
-                    <p className="text-red-700">{connectionError}</p>
+                    <p className="text-red-700">
+                      {projectsError instanceof Error ? projectsError.message : 'Failed to connect to Jira'}
+                    </p>
                   </div>
                 </div>
               )}
@@ -321,12 +301,14 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
                 </div>
               </div>
 
-              {importError && (
+              {importMutation.isError && (
                 <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
                   <div className="text-sm">
                     <p className="font-medium text-red-900">Import Failed</p>
-                    <p className="text-red-700">{importError}</p>
+                    <p className="text-red-700">
+                      {importMutation.error instanceof Error ? importMutation.error.message : 'Import failed'}
+                    </p>
                   </div>
                 </div>
               )}
@@ -334,48 +316,48 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
           )}
 
           {/* Step 4: Results */}
-          {step === 4 && importResult && (
+          {step === 4 && importMutation.data && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
                 <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
                 <div className="text-sm">
                   <p className="font-medium text-green-900">Import Successful!</p>
-                  <p className="text-green-700">Project "{importResult.project_name}" created</p>
+                  <p className="text-green-700">Project "{importMutation.data.project_name}" created</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <Card className="p-3">
                   <p className="text-xs text-muted-foreground">Total Issues</p>
-                  <p className="text-2xl font-bold">{importResult.issues_imported}</p>
+                  <p className="text-2xl font-bold">{importMutation.data.issues_imported}</p>
                 </Card>
                 <Card className="p-3">
                   <p className="text-xs text-muted-foreground">Epics</p>
-                  <p className="text-2xl font-bold">{importResult.epics_created}</p>
+                  <p className="text-2xl font-bold">{importMutation.data.epics_created}</p>
                 </Card>
                 <Card className="p-3">
                   <p className="text-xs text-muted-foreground">Stories</p>
-                  <p className="text-2xl font-bold">{importResult.stories_created}</p>
+                  <p className="text-2xl font-bold">{importMutation.data.stories_created}</p>
                 </Card>
                 <Card className="p-3">
                   <p className="text-xs text-muted-foreground">Tasks</p>
-                  <p className="text-2xl font-bold">{importResult.tasks_created}</p>
+                  <p className="text-2xl font-bold">{importMutation.data.tasks_created}</p>
                 </Card>
                 <Card className="p-3">
                   <p className="text-xs text-muted-foreground">Subtasks</p>
-                  <p className="text-2xl font-bold">{importResult.subtasks_created}</p>
+                  <p className="text-2xl font-bold">{importMutation.data.subtasks_created}</p>
                 </Card>
                 <Card className="p-3">
                   <p className="text-xs text-muted-foreground">Dependencies</p>
-                  <p className="text-2xl font-bold">{importResult.dependencies_created}</p>
+                  <p className="text-2xl font-bold">{importMutation.data.dependencies_created}</p>
                 </Card>
                 <Card className="p-3">
                   <p className="text-xs text-muted-foreground">Sprints</p>
-                  <p className="text-2xl font-bold">{importResult.sprints_created}</p>
+                  <p className="text-2xl font-bold">{importMutation.data.sprints_created}</p>
                 </Card>
                 <Card className="p-3">
                   <p className="text-xs text-muted-foreground">Users</p>
-                  <p className="text-2xl font-bold">{importResult.users_imported}</p>
+                  <p className="text-2xl font-bold">{importMutation.data.users_imported}</p>
                 </Card>
               </div>
             </div>
@@ -388,7 +370,7 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
               <Button variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button onClick={handleNextToProjectSelection} disabled={!connectionTested}>
+              <Button onClick={handleNextToProjectSelection} disabled={!projectsFetchSuccess}>
                 Next
               </Button>
             </>
@@ -408,8 +390,8 @@ export function JiraImportDialog({ trigger }: JiraImportDialogProps) {
               <Button variant="outline" onClick={() => setStep(2)}>
                 Back
               </Button>
-              <Button onClick={handleImport} disabled={importing}>
-                {importing ? (
+              <Button onClick={handleImport} disabled={importMutation.isPending}>
+                {importMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Importing...
