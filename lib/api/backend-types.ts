@@ -176,3 +176,72 @@ export interface ReasoningHealth {
   rules_loaded: boolean;
   error?: string;
 }
+
+// Jira Integration types
+export interface JiraConfig {
+  url: string;
+  email: string;
+  api_token: string;
+  project_key?: string;
+}
+
+export interface JiraImportRequest {
+  jira_url: string;
+  email: string;
+  api_token: string;
+  project_key: string;
+  project_name?: string;
+  include_subtasks?: boolean;
+  include_epics?: boolean;
+}
+
+export interface JiraImportResult {
+  project_name: string;
+  project_slug: string;
+  project_iri: string;
+  issues_imported: number;
+  epics_created: number;
+  stories_created: number;
+  tasks_created: number;
+  subtasks_created: number;
+  dependencies_created: number;
+  sprints_created: number;
+  users_imported: number;
+}
+
+export interface JiraProject {
+  key: string;
+  name: string;
+  description?: string;
+}
+
+export interface JiraIssue {
+  key: string;
+  summary: string;
+  description?: string;
+  issue_type: string;
+  status: string;
+  assignee?: string;
+  priority?: string;
+  created: string;
+  updated: string;
+  story_points?: number;
+}
+
+// GitHub Integration types (placeholder)
+export interface GitHubImportRequest {
+  repository: string;
+  access_token: string;
+  project_name?: string;
+  include_issues?: boolean;
+  include_pull_requests?: boolean;
+}
+
+// Asana Integration types (placeholder)
+export interface AsanaImportRequest {
+  workspace_id: string;
+  project_id: string;
+  access_token: string;
+  project_name?: string;
+}
+

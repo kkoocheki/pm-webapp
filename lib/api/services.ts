@@ -23,6 +23,9 @@ import {
   InferenceRule,
   OntologyValidation,
   ReasoningHealth,
+  JiraImportRequest,
+  JiraImportResult,
+  JiraProject,
 } from './backend-types';
 
 // ==================== Project Services ====================
@@ -209,6 +212,27 @@ export const importService = {
     }
 
     return response.json();
+  },
+
+  /**
+   * Import from Jira
+   */
+  async importJira(request: JiraImportRequest): Promise<JiraImportResult> {
+    const response = await apiClient.post<JiraImportResult>(
+      ENDPOINTS.importJira,
+      request
+    );
+    return response;
+  },
+
+  /**
+   * List available Jira projects (for selection)
+   */
+  async listJiraProjects(jiraUrl: string, email: string, apiToken: string): Promise<JiraProject[]> {
+    const response = await apiClient.get<JiraProject[]>(
+      ENDPOINTS.jiraProjects(jiraUrl, email, apiToken)
+    );
+    return response;
   },
 };
 

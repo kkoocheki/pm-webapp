@@ -29,6 +29,9 @@ export const ENDPOINTS = {
 
   // Import/Export
   importTtl: '/api/import/ttl',
+  importJira: '/api/import/jira',
+  jiraProjects: (jiraUrl: string, email: string, apiToken: string) =>
+    `/api/import/jira/projects?url=${encodeURIComponent(jiraUrl)}&email=${encodeURIComponent(email)}&token=${encodeURIComponent(apiToken)}`,
 
   // Reasoning
   reasoningApply: '/api/reasoning/apply',
