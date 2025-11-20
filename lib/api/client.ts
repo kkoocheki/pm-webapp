@@ -4,11 +4,12 @@
  */
 
 import { ApiResponse } from './types';
+import { API_CONFIG } from './config';
 
 class ApiClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = '/api') {
+  constructor(baseUrl: string = API_CONFIG.baseURL) {
     this.baseUrl = baseUrl;
   }
 

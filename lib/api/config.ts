@@ -1,0 +1,34 @@
+/**
+ * API Configuration
+ * Centralized configuration for API endpoints and settings
+ */
+
+export const API_CONFIG = {
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000',
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+} as const;
+
+export const ENDPOINTS = {
+  // Projects
+  projects: '/api/projects',
+  project: (slug: string) => `/api/projects/${slug}`,
+
+  // Tasks
+  tasks: (projectSlug: string) => `/api/projects/${projectSlug}/tasks`,
+  task: (projectSlug: string, taskToken: string) => `/api/projects/${projectSlug}/tasks/${taskToken}`,
+
+  // Links/Dependencies
+  links: (projectSlug: string) => `/api/projects/${projectSlug}/links`,
+  link: (projectSlug: string, linkToken: string) => `/api/projects/${projectSlug}/links/${linkToken}`,
+
+  // Analytics
+  analytics: (projectSlug: string) => `/api/projects/${projectSlug}/analytics`,
+
+  // Health
+  health: '/health',
+} as const;
+
+export const DEFAULT_PROJECT_SLUG = process.env.NEXT_PUBLIC_DEFAULT_PROJECT || 'demo-project';

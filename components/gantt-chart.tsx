@@ -20,13 +20,15 @@ const columns = [
 export function GanttChart() {
   const [mounted, setMounted] = useState(false);
 
-  // Get data ONCE - useMemo with empty deps ensures it only calculates once
+  // Subscribe to store changes to get reactive data
+  const stories = useAppStore((state) => state.stories);
+  const tasks = useAppStore((state) => state.tasks);
+  const dependencies = useAppStore((state) => state.dependencies);
+
+  // Convert data to Gantt format - will update when store changes
   const ganttData = useMemo(() => {
-    const stories = useAppStore.getState().stories;
-    const tasks = useAppStore.getState().tasks;
-    const dependencies = useAppStore.getState().dependencies;
     return storiesAndTasksToGanttFormat(stories, tasks, dependencies);
-  }, []);
+  }, [stories, tasks, dependencies]);
 
   const handleInit = useMemo(() => (api: any) => {
     api.intercept('scroll-chart', () => {
