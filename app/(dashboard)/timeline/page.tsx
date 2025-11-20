@@ -33,8 +33,12 @@ export default function TimelinePage() {
             Interactive timeline showing task schedules and dependencies
           </p>
         </div>
-        <div className="rounded-lg border bg-card overflow-hidden">
-          <GanttChart />
+        <div className="rounded-lg border bg-card">
+          <div className="gantt-cell">
+            <div className="gantt-box">
+              <GanttChart />
+            </div>
+          </div>
         </div>
       </div>
     </div>

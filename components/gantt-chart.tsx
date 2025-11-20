@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Gantt, Willow } from '@svar-ui/react-gantt';
 import { useAppStore } from '@/lib/stores/app-store';
 import { storiesAndTasksToGanttFormat } from '@/lib/adapters/gantt-adapter';
@@ -19,14 +19,20 @@ const columns = [
 
 export function GanttChart() {
   const [mounted, setMounted] = useState(false);
-  const stories = useAppStore((state) => state.stories);
-  const tasks = useAppStore((state) => state.tasks);
-  const dependencies = useAppStore((state) => state.dependencies);
 
-  const ganttData = useMemo(
-    () => storiesAndTasksToGanttFormat(stories, tasks, dependencies),
-    [stories, tasks, dependencies]
-  );
+  // Get data ONCE - useMemo with empty deps ensures it only calculates once
+  const ganttData = useMemo(() => {
+    const stories = useAppStore.getState().stories;
+    const tasks = useAppStore.getState().tasks;
+    const dependencies = useAppStore.getState().dependencies;
+    return storiesAndTasksToGanttFormat(stories, tasks, dependencies);
+  }, []);
+
+  const handleInit = useMemo(() => (api: any) => {
+    api.intercept('scroll-chart', () => {
+      return false;
+    });
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -34,7 +40,7 @@ export function GanttChart() {
 
   if (!mounted) {
     return (
-      <div className="h-[600px] w-full rounded-lg border flex items-center justify-center text-muted-foreground">
+      <div className="flex items-center justify-center h-[600px] text-muted-foreground">
         Loading Gantt chart...
       </div>
     );
@@ -42,14 +48,13 @@ export function GanttChart() {
 
   return (
     <Willow>
-      <div className="h-[600px] w-full rounded-lg border">
-        <Gantt
-          tasks={ganttData.tasks}
-          links={ganttData.links}
-          scales={scales}
-          columns={columns}
-        />
-      </div>
+      <Gantt
+        tasks={ganttData.tasks}
+        links={ganttData.links}
+        scales={scales}
+        columns={columns}
+        init={handleInit}
+      />
     </Willow>
   );
 }

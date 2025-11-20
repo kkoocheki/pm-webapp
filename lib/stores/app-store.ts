@@ -66,7 +66,7 @@ interface AppState {
   setIsLoading: (loading: boolean) => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>()((set) => ({
   // Initial state
   currentProject: null,
   epics: [],
