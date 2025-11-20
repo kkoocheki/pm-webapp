@@ -102,9 +102,9 @@ app.get('/jira/projects', async (c) => {
       },
     });
 
-    const projects = await client.projects.getAllProjects();
+    const projects = await client.projects.searchProjects();
 
-    const jiraProjects: JiraProject[] = projects.map((p: any) => ({
+    const jiraProjects: JiraProject[] = (projects.values || []).map((p: any) => ({
       key: p.key,
       name: p.name,
       description: p.description,
@@ -141,7 +141,7 @@ app.post('/jira', async (c) => {
 
     // Get project details
     const project = await client.projects.getProject({ projectIdOrKey: body.project_key });
-    const projectName = body.project_name || project.name;
+    const projectName = body.project_name || project.name || body.project_key;
     const projectSlug = generateToken(projectName);
     const projectIRI = `${PREFIXES.pm}Project/${projectSlug}`;
 

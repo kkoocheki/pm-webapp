@@ -3,7 +3,7 @@
  */
 
 import { Hono } from 'hono';
-import { sparqlSelect, sparqlUpdate, sparqlConstruct } from '../lib/sparql';
+import { sparqlSelect, sparqlUpdate, sparqlConstruct, escapeSparqlString } from '../lib/sparql';
 import { mapToProject, mapToTask, mapToLink, generateToken } from '../lib/mappers';
 import { PREFIX_STRING, PREFIXES } from '../types';
 import type { Project, ProjectData } from '../types';
@@ -149,7 +149,7 @@ app.post('/', async (c) => {
       INSERT DATA {
         <${projectIRI}> a pm:Project ;
                         pm:slug "${slug}" ;
-                        pm:name "${name}" ${body.description ? `; pm:description "${body.description}"` : ''} ${body.start_date ? `; pm:startDate "${body.start_date}"^^xsd:date` : ''} ${body.end_date ? `; pm:endDate "${body.end_date}"^^xsd:date` : ''} ${body.status ? `; pm:status "${body.status}"` : ''} .
+                        pm:name "${escapeSparqlString(name)}" ${body.description ? `; pm:description "${escapeSparqlString(body.description)}"` : ''} ${body.start_date ? `; pm:startDate "${body.start_date}"^^xsd:date` : ''} ${body.end_date ? `; pm:endDate "${body.end_date}"^^xsd:date` : ''} ${body.status ? `; pm:status "${escapeSparqlString(body.status || '')}"` : ''} .
       }
     `;
 
@@ -183,11 +183,11 @@ app.put('/:slug', async (c) => {
 
     // Build update query
     const updates: string[] = [];
-    if (body.name) updates.push(`pm:name "${body.name}"`);
-    if (body.description !== undefined) updates.push(`pm:description "${body.description}"`);
+    if (body.name) updates.push(`pm:name "${escapeSparqlString(body.name)}"`);
+    if (body.description !== undefined) updates.push(`pm:description "${escapeSparqlString(body.description)}"`);
     if (body.start_date) updates.push(`pm:startDate "${body.start_date}"^^xsd:date`);
     if (body.end_date) updates.push(`pm:endDate "${body.end_date}"^^xsd:date`);
-    if (body.status) updates.push(`pm:status "${body.status}"`);
+    if (body.status) updates.push(`pm:status "${escapeSparqlString(body.status)}"`);
 
     if (updates.length === 0) {
       return c.json({ error: 'No updates provided' }, 400);

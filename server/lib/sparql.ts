@@ -29,6 +29,7 @@ export async function sparqlSelect<T = any>(query: string): Promise<T[]> {
 
     return bindings.map((binding) => {
       const row: any = {};
+      // @ts-ignore - Comunica types are inconsistent
       for (const [key, value] of binding.entries()) {
         row[key] = value.value;
       }
