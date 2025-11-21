@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Gantt, Willow } from '@svar-ui/react-gantt';
-import { useAppStore } from '@/lib/stores/app-store';
+import { useProjectData } from '@/lib/hooks/use-project-data';
 import { storiesAndTasksToGanttFormat } from '@/lib/adapters/gantt-adapter';
+import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
 
 const scales = [
   { unit: 'month' as const, step: 1, format: 'MMMM yyyy' },
@@ -20,12 +21,16 @@ const columns = [
 export function GanttChart() {
   const [mounted, setMounted] = useState(false);
 
-  // Subscribe to store changes to get reactive data
-  const stories = useAppStore((state) => state.stories);
-  const tasks = useAppStore((state) => state.tasks);
-  const dependencies = useAppStore((state) => state.dependencies);
+  // Get data directly from React Query cache
+  const { data, isLoading } = useProjectData(DEFAULT_PROJECT_SLUG);
+  const tasks = data?.tasks || [];
+  const dependencies = data?.dependencies || [];
 
-  // Convert data to Gantt format - will update when store changes
+  // Stories/Epics not yet implemented in backend, using empty array
+  // TODO: Add stories/epics endpoints when backend supports them
+  const stories: any[] = [];
+
+  // Convert data to Gantt format - will update when React Query data changes
   const ganttData = useMemo(() => {
     return storiesAndTasksToGanttFormat(stories, tasks, dependencies);
   }, [stories, tasks, dependencies]);
@@ -40,7 +45,7 @@ export function GanttChart() {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  if (!mounted || isLoading) {
     return (
       <div className="flex items-center justify-center h-[600px] text-muted-foreground">
         Loading Gantt chart...

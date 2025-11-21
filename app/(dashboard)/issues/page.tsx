@@ -8,11 +8,14 @@ import { GanttChart } from '@/components/gantt-chart';
 import { TaskKanbanBoard } from '@/components/kanban-board';
 import { columns } from './components/columns';
 import { DataTable } from './components/data-table';
-import { useAppStore } from '@/lib/stores/app-store';
+import { useProjectData } from '@/lib/hooks/use-project-data';
 import { tasksToTableFormat } from '@/lib/adapters/table-adapter';
+import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
 
 export default function IssuesPage() {
-  const rdfTasks = useAppStore((state) => state.tasks);
+  // Get tasks directly from React Query cache
+  const { data, isLoading } = useProjectData(DEFAULT_PROJECT_SLUG);
+  const rdfTasks = data?.tasks || [];
   const tasks = tasksToTableFormat(rdfTasks);
 
   return (
@@ -29,6 +32,12 @@ export default function IssuesPage() {
           New Task
         </Button>
       </div>
+
+      {isLoading ? (
+        <div className="flex h-96 items-center justify-center">
+          <p className="text-muted-foreground">Loading tasks...</p>
+        </div>
+      ) : null}
 
       <Tabs defaultValue="list" className="w-full" suppressHydrationWarning>
         <TabsList suppressHydrationWarning>

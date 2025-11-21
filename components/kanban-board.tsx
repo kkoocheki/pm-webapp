@@ -8,9 +8,8 @@ import {
   KanbanHeader,
   KanbanProvider,
 } from '@/components/kanban';
-import { useAppStore } from '@/lib/stores/app-store';
 import { tasksToKanbanFormat, taskKanbanColumns, kanbanToTaskUpdate } from '@/lib/adapters/kanban-adapter';
-import { useUpdateTask } from '@/lib/hooks/use-project-data';
+import { useProjectData, useUpdateTask } from '@/lib/hooks/use-project-data';
 import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -19,15 +18,26 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 });
 
 export function TaskKanbanBoard() {
-  const rdfTasks = useAppStore((state) => state.tasks);
+  // Get tasks directly from React Query cache
+  const { data, isLoading } = useProjectData(DEFAULT_PROJECT_SLUG);
+  const rdfTasks = data?.tasks || [];
+
   const updateTaskMutation = useUpdateTask(DEFAULT_PROJECT_SLUG);
   const kanbanTasks = tasksToKanbanFormat(rdfTasks);
   const [tasks, setTasks] = useState(kanbanTasks);
 
-  // Update local state when store changes
+  // Update local state when React Query data changes
   useEffect(() => {
     setTasks(tasksToKanbanFormat(rdfTasks));
   }, [rdfTasks]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[600px] items-center justify-center">
+        <p className="text-muted-foreground">Loading tasks...</p>
+      </div>
+    );
+  }
 
   // Handle task movement between columns
   const handleDataChange = useCallback((newTasks: typeof tasks) => {
