@@ -1,0 +1,33 @@
+services:
+  fuseki:
+    image: stain/jena-fuseki:latest
+    container_name: pm-fuseki
+    ports:
+      - "3030:3030"
+    volumes:
+      - ./fuseki/config.ttl:/fuseki/config.ttl:ro
+      - ./fuseki/rules:/fuseki/rules:ro
+      - ./fuseki/ontology:/fuseki/ontology:ro
+      - fuseki-data:/fuseki/databases
+      - fuseki-config:/fuseki/configuration
+    environment:
+      - ADMIN_PASSWORD=admin
+      - JVM_ARGS=-Xmx2g
+    command: ["--config=/fuseki/config.ttl"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3030/$/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pm-network
+
+networks:
+  pm-network:
+    driver: bridge
+
+volumes:
+  fuseki-data:
+    driver: local
+  fuseki-config:
+    driver: local

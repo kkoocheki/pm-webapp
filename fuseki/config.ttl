@@ -1,0 +1,59 @@
+@prefix fuseki: <http://jena.apache.org/fuseki#> .
+@prefix tdb2:   <http://jena.apache.org/2016/tdb#> .
+@prefix ja:     <http://jena.hpl.hp.com/2005/11/Assembler#> .
+@prefix inf:    <http://jena.hpl.hp.com/2007/11/Assembler#> .
+@prefix rr:     <http://jena.hpl.hp.com/2003/RuleReasoner#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix :       <#> .
+
+#################################################################
+# PM App Fuseki Configuration with Inference
+# Based on your jena-fuseki-inf-main setup
+#################################################################
+
+[] a fuseki:Server ;
+   fuseki:services ( :service-gantt ) .
+
+#################################################################
+# Main PM App dataset with custom rule-based inference
+# This includes temporal reasoning and PM-specific rules
+#################################################################
+:service-gantt a fuseki:Service ;
+    fuseki:name     "gantt" ;
+    fuseki:dataset  :dataset-gantt ;
+    fuseki:endpoint [ fuseki:operation fuseki:query  ; fuseki:name "sparql" ] ,
+                    [ fuseki:operation fuseki:update ; fuseki:name "update" ] ,
+                    [ fuseki:operation fuseki:gsp-rw ; fuseki:name "data"   ] ,
+                    [ fuseki:operation fuseki:upload ; fuseki:name "upload" ] .
+
+#################################################################
+# Dataset with rule-based inference (temporal + RDFS + custom)
+#################################################################
+:store-gantt a tdb2:DatasetTDB2 ;
+    tdb2:location "/fuseki/databases/gantt" ;
+    tdb2:unionDefaultGraph true .
+
+:storeGraph-gantt a tdb2:GraphTDB ;
+    tdb2:dataset :store-gantt .
+
+# Inference model with custom rules
+:infGraph-gantt a ja:InfModel ;
+  ja:baseModel :storeGraph-gantt ;
+  ja:reasoner [
+    a inf:GenericRuleReasonerFactory ;
+    # Load your custom temporal reasoning rules
+    ja:rulesFrom <file:/fuseki/rules/temporal.rules> ;
+    # Load useful RDFS inference rules
+    ja:rulesFrom <file:/fuseki/rules/rdfs_useful.rules> ;
+    # Load custom PM rules (currently empty, ready for your additions)
+    ja:rulesFrom <file:/fuseki/rules/custom.rules> ;
+    # Forward chaining mode for better performance
+    inf:mode "forward" ;
+    # Enable derivation logging to trace inferences
+    inf:derivationLogging true ;
+    # Enable caching for transitive closure
+    rr:enableTGCCaching true
+  ] .
+
+:dataset-gantt a ja:RDFDataset ;
+    ja:defaultGraph :infGraph-gantt .
