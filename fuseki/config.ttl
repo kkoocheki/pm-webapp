@@ -7,53 +7,139 @@
 @prefix :       <#> .
 
 #################################################################
-# PM App Fuseki Configuration with Inference
-# Based on your jena-fuseki-inf-main setup
+# Server configuration
+# These dataset are defined statically and can't be removed with
+# the Fuseki UI. If you want to remove one — or add another - do
+# that in this file. If you add or remove datasets, be sure to
+# update fuseki:services accordingly.
 #################################################################
-
 [] a fuseki:Server ;
-   fuseki:services ( :service-gantt ) .
+   fuseki:authConfig "shiro.ini" ;
+   fuseki:datasets "/opt/fuseki/databases" ;
+   fuseki:services ( :service-owl :service-rdfs :service-rules :service-base) ;
+   fuseki:datasetDescription "/opt/fuseki/databases" .
 
 #################################################################
-# Main PM App dataset with custom rule-based inference
-# This includes temporal reasoning and PM-specific rules
+# Service configuration for dataset with OWL Full inference
+# You can change the name of the dataset at the fuseki:name value
 #################################################################
-:service-gantt a fuseki:Service ;
-    fuseki:name     "gantt" ;
-    fuseki:dataset  :dataset-gantt ;
+:service-owl  a fuseki:Service ;
+    fuseki:name     "ds-owl" ;
+    fuseki:dataset  :dataset-ds-owl ;
+    fuseki:endpoint  [ fuseki:operation fuseki:query  ; fuseki:name "sparql" ] ,
+                     [ fuseki:operation fuseki:update ; fuseki:name "update" ] ,
+                     [ fuseki:operation fuseki:gsp-rw ; fuseki:name "data"   ] ,
+                     [ fuseki:operation fuseki:upload ; fuseki:name "upload" ] .
+
+#################################################################
+# Dataset configuration for dataset with OWL Full inference
+#################################################################
+:store-owl  a tdb2:DatasetTDB2 ;
+        tdb2:location "/opt/fuseki/databases/owl" ;
+        tdb2:unionDefaultGraph true .
+
+:storeGraph-owl  a tdb2:GraphTDB ;
+        tdb2:dataset :store-owl .
+
+:infGraph-owl  a ja:InfModel ;
+        ja:baseModel  :storeGraph-owl ;
+        ja:reasoner   [ ja:reasonerURL <http://jena.hpl.hp.com/2003/OWLFBRuleReasoner> ] .
+
+:dataset-ds-owl  a ja:RDFDataset ;
+        ja:defaultGraph :infGraph-owl .
+
+#################################################################
+# Service configuration for dataset with RDFS inference
+# You can change the name of the dataset at the fuseki:name value
+#################################################################
+:service-rdfs  a fuseki:Service ;
+    fuseki:name     "ds-rdfs" ;
+    fuseki:dataset  :dataset-ds-rdfs ;
+    fuseki:endpoint  [ fuseki:operation fuseki:query  ; fuseki:name "sparql" ] ,
+                     [ fuseki:operation fuseki:update ; fuseki:name "update" ] ,
+                     [ fuseki:operation fuseki:gsp-rw ; fuseki:name "data"   ] ,
+                     [ fuseki:operation fuseki:upload ; fuseki:name "upload" ] .
+
+#################################################################
+# Dataset configuration for dataset with RDFS inference
+#################################################################
+:store-rdfs  a tdb2:DatasetTDB2 ;
+        tdb2:location "/opt/fuseki/databases/rdfs" ;
+        tdb2:unionDefaultGraph true .
+
+:storeGraph-rdfs  a tdb2:GraphTDB ;
+        tdb2:dataset :store-rdfs .
+
+:infGraph-rdfs  a ja:InfModel ;
+        ja:baseModel  :storeGraph-rdfs ;
+        ja:reasoner   [ ja:reasonerURL <http://jena.hpl.hp.com/2003/RDFSExptRuleReasoner> ] .
+
+:dataset-ds-rdfs  a ja:RDFDataset ;
+        ja:defaultGraph :infGraph-rdfs .
+
+
+
+
+#################################################################
+# Service for custom rule inference
+#################################################################
+:service-rules  a fuseki:Service ;
+    fuseki:name     "ds-rules" ;
+    fuseki:dataset  :dataset-ds-rules ;
+    fuseki:endpoint  [ fuseki:operation fuseki:query  ; fuseki:name "sparql" ] ,
+                     [ fuseki:operation fuseki:update ; fuseki:name "update" ] ,
+                     [ fuseki:operation fuseki:gsp-rw ; fuseki:name "data"   ] ,
+                     [ fuseki:operation fuseki:upload ; fuseki:name "upload" ] .
+
+#################################################################
+# Dataset configuration for rule-based inference
+#################################################################
+:store-rules  a tdb2:DatasetTDB2 ;
+        tdb2:location "/opt/fuseki/databases/rules" ;
+        tdb2:unionDefaultGraph true .
+
+:storeGraph-rules  a tdb2:GraphTDB ;
+        tdb2:dataset :store-rules .
+
+# Reference to external .rules file
+:infGraph-rules a ja:InfModel ;
+  ja:baseModel :storeGraph-rules ;
+  ja:reasoner [
+    a inf:GenericRuleReasonerFactory ;
+    ja:rulesFrom <file:/opt/fuseki/rules/rdfs_useful.rules> ;   # direct file: URI
+    ja:rulesFrom <file:/opt/fuseki/rules/temporal.rules> ;   # direct file: URI
+    ja:rulesFrom <file:/opt/fuseki/rules/custom.rules> ;   # direct file: URI
+    inf:mode "forward" ;
+    inf:derivationLogging true ;
+    rr:enableTGCCaching true
+  ] .
+
+:dataset-ds-rules  a ja:RDFDataset ;
+        ja:defaultGraph :infGraph-rules .
+
+
+
+
+
+#################################################################
+# Service with NO inference
+#################################################################
+:service-base  a fuseki:Service ;
+    fuseki:name     "ds-base" ;
+    fuseki:dataset  :dataset-ds-base ;
     fuseki:endpoint [ fuseki:operation fuseki:query  ; fuseki:name "sparql" ] ,
                     [ fuseki:operation fuseki:update ; fuseki:name "update" ] ,
                     [ fuseki:operation fuseki:gsp-rw ; fuseki:name "data"   ] ,
                     [ fuseki:operation fuseki:upload ; fuseki:name "upload" ] .
 
-#################################################################
-# Dataset with rule-based inference (temporal + RDFS + custom)
-#################################################################
-:store-gantt a tdb2:DatasetTDB2 ;
-    tdb2:location "/fuseki/databases/gantt" ;
-    tdb2:unionDefaultGraph true .
+# Plain TDB2 dataset (no reasoner)
+:store-base  a tdb2:DatasetTDB2 ;
+    tdb2:location "/opt/fuseki/databases/base" ;
+    tdb2:unionDefaultGraph false .   # set true only if you want union view
 
-:storeGraph-gantt a tdb2:GraphTDB ;
-    tdb2:dataset :store-gantt .
+# Default graph is the raw TDB graph
+:storeGraph-base a tdb2:GraphTDB ;
+    tdb2:dataset :store-base .
 
-# Inference model with custom rules
-:infGraph-gantt a ja:InfModel ;
-  ja:baseModel :storeGraph-gantt ;
-  ja:reasoner [
-    a inf:GenericRuleReasonerFactory ;
-    # Load your custom temporal reasoning rules
-    ja:rulesFrom <file:/fuseki/rules/temporal.rules> ;
-    # Load useful RDFS inference rules
-    ja:rulesFrom <file:/fuseki/rules/rdfs_useful.rules> ;
-    # Load custom PM rules (currently empty, ready for your additions)
-    ja:rulesFrom <file:/fuseki/rules/custom.rules> ;
-    # Forward chaining mode for better performance
-    inf:mode "forward" ;
-    # Enable derivation logging to trace inferences
-    inf:derivationLogging true ;
-    # Enable caching for transitive closure
-    rr:enableTGCCaching true
-  ] .
-
-:dataset-gantt a ja:RDFDataset ;
-    ja:defaultGraph :infGraph-gantt .
+:dataset-ds-base a ja:RDFDataset ;
+    ja:defaultGraph :storeGraph-base .

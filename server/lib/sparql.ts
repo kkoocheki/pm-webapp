@@ -7,7 +7,8 @@ import { QueryEngine } from '@comunica/query-sparql';
 import { Parser, Generator } from 'sparqljs';
 
 const FUSEKI_URL = process.env.NEXT_PUBLIC_GRAPHDB_ENDPOINT || 'http://localhost:3030';
-const DATASET = process.env.NEXT_PUBLIC_GRAPHDB_DATASET || 'gantt';
+// Available datasets: ds-owl (OWL inference), ds-rdfs (RDFS inference), ds-rules (custom rules), ds-base (no inference)
+const DATASET = process.env.NEXT_PUBLIC_GRAPHDB_DATASET || 'ds-rules';
 
 export const SPARQL_ENDPOINT = `${FUSEKI_URL}/${DATASET}/sparql`;
 export const SPARQL_UPDATE_ENDPOINT = `${FUSEKI_URL}/${DATASET}/update`;
