@@ -1,21 +1,19 @@
 services:
   fuseki:
-    build: ./fuseki  # build from fuseki directory using Dockerfile
+    image: stain/jena-fuseki:latest
     container_name: pm-fuseki
     ports:
-      - "3030:3030"  # Maps the internal port 3030 in the container to the host machine's 3030
+      - "3030:3030"
     volumes:
-      - ./fuseki/config.ttl:/opt/fuseki/config.ttl  # Bind mount the config file
-      - fuseki-data:/opt/fuseki/databases  # Named volume for databases
-      - fuseki-config:/opt/fuseki/configuration  # Named volume for dataset configurations
-      - ./fuseki/rules:/opt/fuseki/rules  # Bind mount the rules directory
-      - ./fuseki/ontology:/opt/fuseki/ontology  # Bind mount the ontology directory
+      - ./fuseki/config.ttl:/fuseki/config.ttl:ro
+      - ./fuseki/rules:/fuseki/rules:ro
+      - ./fuseki/ontology:/fuseki/ontology:ro
+      - fuseki-data:/fuseki/databases
     environment:
-      - FUSEKI_HOME=/opt/fuseki
-      - FUSEKI_BASE=/opt/fuseki
+      - ADMIN_PASSWORD=admin
+      - JVM_ARGS=-Xmx2g
+    command: ["--config=/fuseki/config.ttl"]
 
 volumes:
   fuseki-data:
-    driver: local
-  fuseki-config:
     driver: local
