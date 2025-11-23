@@ -5,35 +5,34 @@
 @prefix :       <#> .
 
 #################################################################
-# PM App Fuseki Configuration with Inference
-# Based on your jena-fuseki-inf-main setup
+# PM App Fuseki Server Configuration
+# Single dataset with custom rule-based inference
 #################################################################
-
 [] a fuseki:Server ;
-   fuseki:services ( :service-gantt ) .
+   fuseki:services ( :service-pm ) .
 
 #################################################################
-# Main PM App dataset with custom rule-based inference
-# This includes temporal reasoning and PM-specific rules
+# PM App Service - with temporal + RDFS + custom PM rules
 #################################################################
-:service-gantt a fuseki:Service ;
-    fuseki:name     "gantt" ;
-    fuseki:dataset  :dataset-gantt ;
+:service-pm a fuseki:Service ;
+    fuseki:name     "pm" ;
+    fuseki:dataset  :dataset-pm ;
     fuseki:endpoint [ fuseki:operation fuseki:query  ; fuseki:name "sparql" ] ,
                     [ fuseki:operation fuseki:update ; fuseki:name "update" ] ,
                     [ fuseki:operation fuseki:gsp-rw ; fuseki:name "data"   ] ,
                     [ fuseki:operation fuseki:upload ; fuseki:name "upload" ] .
 
 #################################################################
-# Dataset with rule-based inference (temporal + RDFS + custom)
+# TDB2 persistent storage
 #################################################################
-:store-gantt a tdb2:DatasetTDB2 ;
-    tdb2:location "/fuseki/databases/gantt" ;
+:store-pm a tdb2:DatasetTDB2 ;
+    tdb2:location "/fuseki/databases/pm" ;
     tdb2:unionDefaultGraph true .
 
-:storeGraph-gantt a tdb2:GraphTDB ;
-    tdb2:dataset :store-gantt .
+:storeGraph-pm a tdb2:GraphTDB ;
+    tdb2:dataset :store-pm .
 
+#################################################################
 # Inference model with custom rules
 :infGraph-gantt a ja:InfModel ;
   ja:baseModel :storeGraph-gantt ;
@@ -46,5 +45,5 @@
   ja:rulesFrom <file:/fuseki/rules/custom.rules> ;
   ja:ruleMode "forward" .
 
-:dataset-gantt a ja:RDFDataset ;
-    ja:defaultGraph :infGraph-gantt .
+:dataset-pm a ja:RDFDataset ;
+    ja:defaultGraph :infGraph-pm .

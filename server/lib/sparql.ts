@@ -5,7 +5,7 @@
  */
 
 const FUSEKI_URL = process.env.NEXT_PUBLIC_GRAPHDB_ENDPOINT || 'http://localhost:3030';
-const DATASET = process.env.NEXT_PUBLIC_GRAPHDB_DATASET || 'gantt';
+const DATASET = process.env.NEXT_PUBLIC_GRAPHDB_DATASET || 'pm';
 
 export const SPARQL_ENDPOINT = `${FUSEKI_URL}/${DATASET}/sparql`;
 export const SPARQL_UPDATE_ENDPOINT = `${FUSEKI_URL}/${DATASET}/update`;
