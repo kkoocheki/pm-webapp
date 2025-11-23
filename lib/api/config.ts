@@ -46,4 +46,4 @@ export const ENDPOINTS = {
   health: '/health',
 } as const;
 
-export const DEFAULT_PROJECT_SLUG = process.env.NEXT_PUBLIC_DEFAULT_PROJECT || 'demo-project';
+export const DEFAULT_PROJECT_SLUG = process.env.NEXT_PUBLIC_DEFAULT_PROJECT || 'ProjectAlpha';

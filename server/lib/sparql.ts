@@ -1,10 +1,8 @@
 /**
  * SPARQL Client for Apache Jena Fuseki
  * Handles all RDF triple store operations
+ * Using simple fetch-based approach for reliability
  */
-
-import { QueryEngine } from '@comunica/query-sparql';
-import { Parser, Generator } from 'sparqljs';
 
 const FUSEKI_URL = process.env.NEXT_PUBLIC_GRAPHDB_ENDPOINT || 'http://localhost:3030';
 const DATASET = process.env.NEXT_PUBLIC_GRAPHDB_DATASET || 'gantt';
@@ -12,26 +10,32 @@ const DATASET = process.env.NEXT_PUBLIC_GRAPHDB_DATASET || 'gantt';
 export const SPARQL_ENDPOINT = `${FUSEKI_URL}/${DATASET}/sparql`;
 export const SPARQL_UPDATE_ENDPOINT = `${FUSEKI_URL}/${DATASET}/update`;
 
-const engine = new QueryEngine();
-const parser = new Parser();
-const generator = new Generator();
-
 /**
- * Execute a SPARQL SELECT query
+ * Execute a SPARQL SELECT query using fetch
  */
 export async function sparqlSelect<T = any>(query: string): Promise<T[]> {
   try {
-    const bindingsStream = await engine.queryBindings(query, {
-      sources: [SPARQL_ENDPOINT],
+    const response = await fetch(SPARQL_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/sparql-query',
+        'Accept': 'application/sparql-results+json',
+      },
+      body: query,
     });
 
-    const bindings = await bindingsStream.toArray();
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`SPARQL query failed: ${response.status} - ${errorText}`);
+    }
 
-    return bindings.map((binding) => {
+    const data = await response.json();
+    const bindings = data.results?.bindings || [];
+
+    return bindings.map((binding: any) => {
       const row: any = {};
-      // @ts-ignore - Comunica types are inconsistent
-      for (const [key, value] of binding.entries()) {
-        row[key] = value.value;
+      for (const [key, value] of Object.entries(binding)) {
+        row[key] = (value as any).value;
       }
       return row as T;
     });
@@ -46,26 +50,21 @@ export async function sparqlSelect<T = any>(query: string): Promise<T[]> {
  */
 export async function sparqlConstruct(query: string): Promise<string> {
   try {
-    const quadStream = await engine.queryQuads(query, {
-      sources: [SPARQL_ENDPOINT],
+    const response = await fetch(SPARQL_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/sparql-query',
+        'Accept': 'text/turtle',
+      },
+      body: query,
     });
 
-    const quads = await quadStream.toArray();
-
-    // Convert quads to Turtle format
-    const { Writer } = await import('n3');
-    const writer = new Writer();
-
-    for (const quad of quads) {
-      writer.addQuad(quad);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`SPARQL CONSTRUCT failed: ${response.status} - ${errorText}`);
     }
 
-    return new Promise((resolve, reject) => {
-      writer.end((error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      });
-    });
+    return await response.text();
   } catch (error) {
     console.error('SPARQL CONSTRUCT error:', error);
     throw new Error(`SPARQL query failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -77,10 +76,22 @@ export async function sparqlConstruct(query: string): Promise<string> {
  */
 export async function sparqlAsk(query: string): Promise<boolean> {
   try {
-    const result = await engine.queryBoolean(query, {
-      sources: [SPARQL_ENDPOINT],
+    const response = await fetch(SPARQL_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/sparql-query',
+        'Accept': 'application/sparql-results+json',
+      },
+      body: query,
     });
-    return result;
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`SPARQL ASK failed: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data.boolean === true;
   } catch (error) {
     console.error('SPARQL ASK error:', error);
     throw new Error(`SPARQL query failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

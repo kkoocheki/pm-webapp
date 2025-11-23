@@ -11,12 +11,51 @@ import {
   BackendLink,
   BackendLinkCreate,
 } from './backend-types';
-import { Task, Project, Dependency, DependencyType } from './types';
+import { Task, Project, Dependency, DependencyType, TaskItemType, TaskPriority, TaskStatus } from './types';
 
 // ==================== Task Mappers ====================
 
 /**
- * Map backend task status to frontend task status
+ * Map RDF state to frontend task status
+ * RDF states: ToDo, InProgress, Done, InReview, Completed, Blocked
+ */
+function mapRdfStateToStatus(state?: string | null, progress?: number | null, open?: boolean | null): TaskStatus {
+  if (state) {
+    const stateMap: Record<string, TaskStatus> = {
+      'ToDo': 'not-started',
+      'InProgress': 'in-progress',
+      'Done': 'completed',
+      'Completed': 'completed',
+      'InReview': 'in-progress',
+      'Blocked': 'blocked',
+    };
+    if (stateMap[state]) return stateMap[state];
+  }
+  // Fallback to progress-based status
+  if (progress === 100) return 'completed';
+  if (progress && progress > 0) return 'in-progress';
+  if (open === false) return 'blocked';
+  return 'not-started';
+}
+
+/**
+ * Map RDF priority to frontend priority
+ * RDF priorities: Urgent, High, Medium, Low, NoPriority
+ */
+function mapRdfPriorityToPriority(priority?: string | null): TaskPriority {
+  if (!priority) return 'medium';
+  const priorityMap: Record<string, TaskPriority> = {
+    'Urgent': 'urgent',
+    'High': 'high',
+    'Medium': 'medium',
+    'Low': 'low',
+    'NoPriority': 'none',
+  };
+  return priorityMap[priority] || 'medium';
+}
+
+/**
+ * Map backend task status to frontend task status (legacy fallback)
  */
 function mapTaskStatus(progress?: number | null, open?: boolean | null): Task['status'] {
   if (progress === 100) return 'completed';
@@ -44,8 +83,10 @@ export function backendTaskToTask(backendTask: BackendTask): Task {
     id: taskId,
     title: backendTask.name,
     description: undefined, // Backend doesn't have description in basic schema
-    status: mapTaskStatus(backendTask.progress, backendTask.open),
-    assignee: undefined, // Not in backend schema
+    status: mapRdfStateToStatus(backendTask.state, backendTask.progress, backendTask.open),
+    itemType: backendTask.type as TaskItemType, // Preserve type: 'project' | 'summary' | 'task'
+    priority: mapRdfPriorityToPriority(backendTask.priority),
+    assignee: backendTask.assignee || undefined,
     startDate: backendTask.start || undefined,
     endDate: backendTask.end || undefined,
     actualStart: undefined,

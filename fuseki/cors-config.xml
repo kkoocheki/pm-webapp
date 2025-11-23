@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_4.dtd">
+<Configure class="org.eclipse.jetty.servlet.ServletContextHandler">
+  <Call name="insertHandler">
+    <Arg>
+      <New class="org.eclipse.jetty.servlets.CrossOriginFilter">
+        <Set name="allowedOrigins">*</Set>
+        <Set name="allowedMethods">GET,POST,PUT,DELETE,OPTIONS,HEAD</Set>
+        <Set name="allowedHeaders">*</Set>
+        <Set name="exposedHeaders">*</Set>
+        <Set name="allowCredentials">true</Set>
+      </New>
+    </Arg>
+  </Call>
+</Configure>

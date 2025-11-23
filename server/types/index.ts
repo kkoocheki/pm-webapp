@@ -3,10 +3,11 @@
  * These match the backend-types.ts in lib/api/
  */
 
-// Prefixes for RDF ontologies
+// Prefixes for RDF ontologies - aligned with Scrum PM Ontology
 export const PREFIXES = {
-  pm: 'http://www.example.org/pm#',
-  sro: 'http://www.example.org/sro#',
+  pm: 'https://www.knoid.io/ontologies/pm#',
+  sro: 'https://www.knoid.io/ontologies/sro#',
+  ex: 'https://example.knoid.io/projects/',
   rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
   rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
   xsd: 'http://www.w3.org/2001/XMLSchema#',
@@ -16,6 +17,7 @@ export const PREFIXES = {
 export const PREFIX_STRING = `
 PREFIX pm: <${PREFIXES.pm}>
 PREFIX sro: <${PREFIXES.sro}>
+PREFIX ex: <${PREFIXES.ex}>
 PREFIX rdf: <${PREFIXES.rdf}>
 PREFIX rdfs: <${PREFIXES.rdfs}>
 PREFIX xsd: <${PREFIXES.xsd}>

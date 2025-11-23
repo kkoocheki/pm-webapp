@@ -6,33 +6,35 @@ import { Hono } from 'hono';
 import { sparqlSelect, sparqlUpdate, sparqlConstruct, escapeSparqlString } from '../lib/sparql';
 import { mapToProject, mapToTask, mapToLink, generateToken } from '../lib/mappers';
 import { PREFIX_STRING, PREFIXES } from '../types';
-import type { Project, ProjectData } from '../types';
+import type { ProjectData, Project } from '../types';
 
 const app = new Hono();
 
 /**
  * GET /api/projects
- * List all projects
+ * List all projects (Scrum Projects)
  */
 app.get('/', async (c) => {
   try {
     const query = `
       ${PREFIX_STRING}
-      SELECT ?project ?slug ?name ?description ?start_date ?end_date ?status
+      SELECT ?project ?name ?description ?start_date ?end_date
       WHERE {
-        ?project a pm:Project .
-        ?project pm:slug ?slug .
-        ?project pm:name ?name .
-        OPTIONAL { ?project pm:description ?description }
-        OPTIONAL { ?project pm:startDate ?start_date }
-        OPTIONAL { ?project pm:endDate ?end_date }
-        OPTIONAL { ?project pm:status ?status }
+        ?project a sro:ScrumProject .
+        ?project rdfs:label ?name .
+        OPTIONAL { ?project rdfs:comment ?description }
+        OPTIONAL { ?project pm:hasPlannedStart ?start_date }
+        OPTIONAL { ?project pm:hasPlannedEnd ?end_date }
       }
       ORDER BY ?name
     `;
 
     const results = await sparqlSelect(query);
-    const projects = results.map(mapToProject);
+    const projects = results.map((row: any) => ({
+      ...mapToProject(row),
+      // Derive slug from IRI (last segment)
+      slug: row.project ? row.project.split('/').pop() : 'unknown',
+    }));
 
     return c.json(projects);
   } catch (error) {
@@ -43,25 +45,24 @@ app.get('/', async (c) => {
 
 /**
  * GET /api/projects/:slug
- * Get project with tasks and links
+ * Get project with tasks and links (Scrum-aligned)
  */
 app.get('/:slug', async (c) => {
   try {
     const slug = c.req.param('slug');
+    const projectIRI = `${PREFIXES.ex}${slug}`;
 
-    // Get project
+    // Get project (Scrum Project)
     const projectQuery = `
       ${PREFIX_STRING}
-      SELECT ?project ?slug ?name ?description ?start_date ?end_date ?status
+      SELECT ?project ?name ?description ?start_date ?end_date
       WHERE {
-        ?project a pm:Project ;
-                 pm:slug "${slug}" ;
-                 pm:name ?name .
-        BIND("${slug}" AS ?slug)
-        OPTIONAL { ?project pm:description ?description }
-        OPTIONAL { ?project pm:startDate ?start_date }
-        OPTIONAL { ?project pm:endDate ?end_date }
-        OPTIONAL { ?project pm:status ?status }
+        BIND(<${projectIRI}> AS ?project)
+        ?project a sro:ScrumProject ;
+                 rdfs:label ?name .
+        OPTIONAL { ?project rdfs:comment ?description }
+        OPTIONAL { ?project pm:hasPlannedStart ?start_date }
+        OPTIONAL { ?project pm:hasPlannedEnd ?end_date }
       }
     `;
 
@@ -70,59 +71,145 @@ app.get('/:slug', async (c) => {
       return c.json({ error: 'Project not found' }, 404);
     }
 
-    const project = mapToProject(projectResults[0]);
+    const projectRow = projectResults[0];
 
-    // Get tasks
-    const tasksQuery = `
+    // Get Epics (top-level summary items)
+    const epicsQuery = `
       ${PREFIX_STRING}
-      SELECT ?task ?token ?text ?description ?start_date ?end_date ?duration ?progress ?parent_token ?type ?priority ?status ?assignee
-      WHERE {
-        ?project pm:slug "${slug}" .
-        ?task pm:belongsToProject ?project .
-        OPTIONAL { ?task pm:token ?token }
-        OPTIONAL { ?task pm:title ?text }
-        OPTIONAL { ?task pm:description ?description }
-        OPTIONAL { ?task pm:startDate ?start_date }
-        OPTIONAL { ?task pm:endDate ?end_date }
-        OPTIONAL { ?task pm:duration ?duration }
-        OPTIONAL { ?task pm:progress ?progress }
-        OPTIONAL { ?task pm:hasParent/pm:token ?parent_token }
-        OPTIONAL { ?task pm:type ?type }
-        OPTIONAL { ?task pm:priority ?priority }
-        OPTIONAL { ?task pm:status ?status }
-        OPTIONAL { ?task pm:assignedTo/pm:name ?assignee }
+      SELECT ?item ?name ?start ?end WHERE {
+        ?item a sro:Epic .
+        ?item rdfs:label ?name .
+        OPTIONAL { ?item pm:hasPlannedStart ?start }
+        OPTIONAL { ?item pm:hasPlannedEnd ?end }
       }
-      ORDER BY ?start_date ?text
+      ORDER BY ?start ?name
     `;
 
-    const tasksResults = await sparqlSelect(tasksQuery);
-    const tasks = tasksResults.map(mapToTask);
+    // Get User Stories (mid-level summary items)
+    // Note: Epic -> Story relationship is sro:hasUserStory (reverse lookup)
+    const storiesQuery = `
+      ${PREFIX_STRING}
+      SELECT ?item ?name ?parent ?start ?end ?state ?priority WHERE {
+        ?item a sro:UserStory .
+        ?item rdfs:label ?name .
+        OPTIONAL { ?parent sro:hasUserStory ?item }
+        OPTIONAL { ?item pm:hasPlannedStart ?start }
+        OPTIONAL { ?item pm:hasPlannedEnd ?end }
+        OPTIONAL { ?item sro:hasState ?state }
+        OPTIONAL { ?item sro:hasPriority ?priority }
+      }
+      ORDER BY ?start ?name
+    `;
 
-    // Get links
+    // Get Tasks (leaf items)
+    const tasksQuery = `
+      ${PREFIX_STRING}
+      SELECT ?item ?name ?parent ?start ?end ?progress ?assignee ?state ?priority WHERE {
+        ?item a pm:Task .
+        ?item rdfs:label ?name .
+        OPTIONAL { ?item pm:hasParent ?parent }
+        OPTIONAL { ?item pm:hasPlannedStart ?start }
+        OPTIONAL { ?item pm:hasPlannedEnd ?end }
+        OPTIONAL { ?item pm:progress ?progress }
+        OPTIONAL { ?item pm:assignedTo ?assigneeUri . ?assigneeUri rdfs:label ?assignee }
+        OPTIONAL { ?item sro:hasState ?state }
+        OPTIONAL { ?item pm:hasTaskState ?state }
+        OPTIONAL { ?item sro:hasPriority ?priority }
+      }
+      ORDER BY ?start ?name
+    `;
+
+    const [epicsResults, storiesResults, tasksResults] = await Promise.all([
+      sparqlSelect(epicsQuery),
+      sparqlSelect(storiesQuery),
+      sparqlSelect(tasksQuery),
+    ]);
+
+    // Map Epics as "project" type (top level, no parent)
+    // Using "project" type for epics to distinguish from user stories
+    const epics = epicsResults.map((row: any) => ({
+      iri: row.item,
+      project: projectRow.project,
+      parent: null, // No parent for epics - IRI string or null
+      type: 'project' as const,
+      name: row.name || 'Untitled Epic',
+      start: row.start || null,
+      end: row.end || null,
+      progress: 0,
+      open: true,
+    }));
+
+    // Helper to extract local name from IRI (e.g., "https://example.org/sro#ToDo" -> "ToDo")
+    const extractLocalName = (iri: string | null): string | null => {
+      if (!iri) return null;
+      const hashIndex = iri.lastIndexOf('#');
+      if (hashIndex !== -1) return iri.substring(hashIndex + 1);
+      const slashIndex = iri.lastIndexOf('/');
+      if (slashIndex !== -1) return iri.substring(slashIndex + 1);
+      return iri;
+    };
+
+    // Map User Stories as "summary" type (parent = epic IRI)
+    const stories = storiesResults.map((row: any) => ({
+      iri: row.item,
+      project: projectRow.project,
+      parent: row.parent || null, // Parent is IRI string or null
+      type: 'summary' as const,
+      name: row.name || 'Untitled Story',
+      start: row.start || null,
+      end: row.end || null,
+      progress: 0,
+      open: true,
+      state: extractLocalName(row.state),
+      priority: extractLocalName(row.priority),
+    }));
+
+    // Map Tasks as "task" type (parent = story IRI)
+    const tasks = tasksResults.map((row: any) => ({
+      iri: row.item,
+      project: projectRow.project,
+      parent: row.parent || null, // Parent is IRI string or null
+      type: 'task' as const,
+      name: row.name || 'Untitled Task',
+      start: row.start || null,
+      end: row.end || null,
+      progress: row.progress ? parseInt(row.progress) : 0,
+      open: true,
+      state: extractLocalName(row.state),
+      priority: extractLocalName(row.priority),
+      assignee: row.assignee || null,
+    }));
+
+    // Combine all items: Epics first, then Stories, then Tasks
+    const allItems = [...epics, ...stories, ...tasks];
+
+    // Get links/dependencies
     const linksQuery = `
       ${PREFIX_STRING}
-      SELECT ?link ?token ?source ?source_token ?target ?target_token ?type ?lag
+      SELECT ?source ?target ?type
       WHERE {
-        ?project pm:slug "${slug}" .
-        ?link a pm:Dependency .
-        ?link pm:source ?source ;
-              pm:target ?target .
-        ?source pm:belongsToProject ?project ;
-                pm:token ?source_token .
-        ?target pm:belongsToProject ?project ;
-                pm:token ?target_token .
-        OPTIONAL { ?link pm:token ?token }
-        OPTIONAL { ?link pm:type ?type }
-        OPTIONAL { ?link pm:lag ?lag }
+        ?source pm:finishToStart ?target .
+        BIND("e2s" AS ?type)
       }
     `;
 
     const linksResults = await sparqlSelect(linksQuery);
-    const links = linksResults.map(mapToLink);
+    const links = linksResults.map((row: any) => ({
+      iri: `${row.source}-${row.target}`,
+      project: projectRow.project,
+      source: row.source,
+      target: row.target,
+      type: 'e2s' as const,
+    }));
 
-    const data: ProjectData = {
-      project,
-      tasks,
+    // Return in BackendProjectDetail format (flat structure)
+    const data = {
+      iri: projectRow.project,
+      name: projectRow.name || 'Untitled Project',
+      description: projectRow.description || null,
+      start: projectRow.start_date || null,
+      end: projectRow.end_date || null,
+      tasks: allItems,
       links,
     };
 

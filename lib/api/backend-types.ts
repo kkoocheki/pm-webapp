@@ -22,7 +22,7 @@ export interface BackendProjectCreate {
   external_id?: string | null;
 }
 
-// Task types
+// Task types - project=epic, summary=user story, task=leaf task
 export type BackendTaskType = 'project' | 'summary' | 'task';
 
 export interface BackendTask {
@@ -36,6 +36,9 @@ export interface BackendTask {
   progress?: number | null; // 0-100
   open?: boolean | null;
   external_id?: string | null;
+  state?: string | null; // RDF state: ToDo, InProgress, Done, InReview, Completed
+  priority?: string | null; // RDF priority: Urgent, High, Medium, Low, NoPriority
+  assignee?: string | null; // Assignee name
 }
 
 export interface BackendTaskCreate {

@@ -1,8 +1,6 @@
 @prefix fuseki: <http://jena.apache.org/fuseki#> .
 @prefix tdb2:   <http://jena.apache.org/2016/tdb#> .
 @prefix ja:     <http://jena.hpl.hp.com/2005/11/Assembler#> .
-@prefix inf:    <http://jena.hpl.hp.com/2007/11/Assembler#> .
-@prefix rr:     <http://jena.hpl.hp.com/2003/RuleReasoner#> .
 @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix :       <#> .
 
@@ -39,21 +37,14 @@
 # Inference model with custom rules
 :infGraph-gantt a ja:InfModel ;
   ja:baseModel :storeGraph-gantt ;
-  ja:reasoner [
-    a inf:GenericRuleReasonerFactory ;
-    # Load your custom temporal reasoning rules
-    ja:rulesFrom <file:/fuseki/rules/temporal.rules> ;
-    # Load useful RDFS inference rules
-    ja:rulesFrom <file:/fuseki/rules/rdfs_useful.rules> ;
-    # Load custom PM rules (currently empty, ready for your additions)
-    ja:rulesFrom <file:/fuseki/rules/custom.rules> ;
-    # Forward chaining mode for better performance
-    inf:mode "forward" ;
-    # Enable derivation logging to trace inferences
-    inf:derivationLogging true ;
-    # Enable caching for transitive closure
-    rr:enableTGCCaching true
-  ] .
+  ja:reasoner :ruleReasoner .
+
+:ruleReasoner a ja:ReasonerFactory ;
+  ja:reasonerURL <http://jena.hpl.hp.com/2003/GenericRuleReasoner> ;
+  ja:rulesFrom <file:/fuseki/rules/temporal.rules> ;
+  ja:rulesFrom <file:/fuseki/rules/rdfs_useful.rules> ;
+  ja:rulesFrom <file:/fuseki/rules/custom.rules> ;
+  ja:ruleMode "forward" .
 
 :dataset-gantt a ja:RDFDataset ;
     ja:defaultGraph :infGraph-gantt .

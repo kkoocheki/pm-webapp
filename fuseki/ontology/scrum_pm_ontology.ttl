@@ -291,6 +291,87 @@ sro:Sprint a owl:Class ;
     rdfs:comment "A time-boxed iteration in Scrum, typically 1-4 weeks"@en ;
     skos:definition "A time-boxed iteration during which a potentially shippable product increment is created"@en .
 
+sro:State a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "State"@en ;
+    rdfs:comment "The state of a work item (e.g., ToDo, InProgress, Done)"@en ;
+    owl:oneOf (
+        sro:Backlog
+        sro:ToDo
+        sro:InProgress
+        sro:InReview
+        sro:Done
+        sro:Cancelled
+        sro:Duplicate
+    ) .
+
+sro:Backlog a sro:State ;
+    rdfs:label "Backlog"@en ;
+    sro:stateIndex "1"^^xsd:integer ;
+    rdfs:comment "Work item is in the backlog and not yet selected for a sprint"@en .
+
+sro:ToDo a sro:State ;
+    rdfs:label "To Do"@en ;
+    sro:stateIndex "2"^^xsd:integer ;
+    rdfs:comment "Work item is planned but not started"@en .
+
+sro:InProgress a sro:State ;
+    rdfs:label "In Progress"@en ;
+    sro:stateIndex "3"^^xsd:integer ;
+    rdfs:comment "Work item is currently being worked on"@en .
+
+sro:InReview a sro:State ;
+    rdfs:label "In Review"@en ;
+    sro:stateIndex "4"^^xsd:integer ;
+    rdfs:comment "Work item is completed and waiting for review"@en .
+
+sro:Done a sro:State ;
+    rdfs:label "Done"@en ;
+    sro:stateIndex "5"^^xsd:integer ;
+    rdfs:comment "Work item is completed"@en .
+
+sro:Cancelled a sro:State ;
+    rdfs:label "Cancelled"@en ;
+    sro:stateIndex "6"^^xsd:integer ;
+    rdfs:comment "Work item has been cancelled"@en .
+
+sro:Duplicate a sro:State ;
+    rdfs:label "Duplicate"@en ;
+    sro:stateIndex "7"^^xsd:integer ;
+    rdfs:comment "Work item is a duplicate of another item"@en .
+
+sro:Priority a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Priority"@en ;
+    rdfs:comment "The priority of a work item"@en ;
+    owl:oneOf (
+        sro:NoPriority
+        sro:Urgent
+        sro:High
+        sro:Medium
+        sro:Low
+    ) .
+
+sro:NoPriority a sro:Priority ;
+    rdfs:label "No Priority"@en ;
+    sro:priorityIndex "0"^^xsd:integer .
+
+sro:Urgent a sro:Priority ;
+    rdfs:label "Urgent"@en ;
+    sro:priorityIndex "1"^^xsd:integer .
+
+sro:High a sro:Priority ;
+    rdfs:label "High"@en ;
+    sro:priorityIndex "2"^^xsd:integer .
+
+sro:Medium a sro:Priority ;
+    rdfs:label "Medium"@en ;
+    sro:priorityIndex "3"^^xsd:integer .
+
+sro:Low a sro:Priority ;
+    rdfs:label "Low"@en ;
+    sro:priorityIndex "4"^^xsd:integer .
+
 # ============================================================================
 # SCRUM CEREMONIES - Scrum Reference Ontology (SRO)
 # ============================================================================
@@ -538,17 +619,8 @@ pm:Task a owl:Class ;
     rdfs:label "Task"@en ;
     rdfs:comment "A unit of work in project management"@en .
 
-pm:Story a owl:Class ;
-    rdfs:subClassOf pm:Activity ;
-    rdfs:label "Story"@en ;
-    rdfs:comment "A user story or requirement as a PM activity"@en ;
-    owl:disjointWith sro:UserStory .
 
-pm:Epic a owl:Class ;
-    rdfs:subClassOf pm:Activity ;
-    rdfs:label "Epic (PM)"@en ;
-    rdfs:comment "A large story that encompasses multiple tasks"@en ;
-    owl:disjointWith sro:Epic .
+
 
 pm:Dependency a owl:Class ;
     rdfs:subClassOf eo:Perdurant ;
@@ -821,10 +893,27 @@ sro:hasAcceptanceCriterion a owl:ObjectProperty ;
     rdfs:range sro:AcceptanceCriterion ;
     rdfs:comment "Relates a user story to its acceptance criteria"@en .
 
+sro:hasState a owl:ObjectProperty ;
+    rdfs:label "has state"@en ;
+    rdfs:domain pm:Activity ;
+    rdfs:range sro:State ;
+    rdfs:comment "Relates an activity to its current state"@en .
+
+sro:hasPriority a owl:ObjectProperty ;
+    rdfs:label "has priority"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range sro:Priority ;
+    rdfs:comment "Relates a user story to its priority"@en .
+
+sro:hasTask a owl:ObjectProperty ;
+    rdfs:label "has task"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range pm:Task ;
+    owl:inverseOf pm:hasParent ;
+    rdfs:comment "Relates a user story to its constituent tasks"@en .
+
 sro:plannedToMaterialize a owl:ObjectProperty ;
     rdfs:label "planned to materialize"@en ;
-    rdfs:domain sro:IntendedScrumDevelopmentTask ;
-    rdfs:range sro:UserStory ;
     rdfs:comment "Relates a planned task to the user story it will materialize"@en .
 
 sro:materializes a owl:ObjectProperty ;
@@ -1050,6 +1139,34 @@ pm:finishDate a owl:DatatypeProperty ;
     rdfs:range xsd:date ;
     rdfs:comment "Activity finish date"@en .
 
+pm:hasPlannedStart a owl:DatatypeProperty ;
+    rdfs:label "planned start date"@en ;
+    rdfs:subPropertyOf pm:startDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The planned start date of an activity"@en .
+
+pm:hasPlannedEnd a owl:DatatypeProperty ;
+    rdfs:label "planned end date"@en ;
+    rdfs:subPropertyOf pm:finishDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The planned end date of an activity"@en .
+
+pm:hasActualStart a owl:DatatypeProperty ;
+    rdfs:label "actual start date"@en ;
+    rdfs:subPropertyOf pm:startDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The actual start date of an activity"@en .
+
+pm:hasActualEnd a owl:DatatypeProperty ;
+    rdfs:label "actual end date"@en ;
+    rdfs:subPropertyOf pm:finishDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The actual end date of an activity"@en .
+
 pm:lagDuration a owl:DatatypeProperty ;
     rdfs:label "lag duration"@en ;
     rdfs:subPropertyOf spo:duration ;
@@ -1059,11 +1176,11 @@ pm:lagDuration a owl:DatatypeProperty ;
 
 ## Scrum-Specific Properties
 
-sro:importance a owl:DatatypeProperty ;
-    rdfs:label "importance"@en ;
-    rdfs:domain sro:UserStory ;
+sro:priorityIndex a owl:DatatypeProperty ;
+    rdfs:label "priority index"@en ;
+    rdfs:domain sro:Priority ;
     rdfs:range xsd:integer ;
-    rdfs:comment "Business value/priority of a user story"@en .
+    rdfs:comment "The integer index associated with a priority"@en .
 
 sro:effort a owl:DatatypeProperty ;
     rdfs:label "effort"@en ;
@@ -1076,6 +1193,18 @@ sro:storyPoints a owl:DatatypeProperty ;
     rdfs:domain sro:UserStory ;
     rdfs:range xsd:decimal ;
     rdfs:comment "Relative sizing of user story complexity"@en .
+
+sro:hasBusinessValue a owl:DatatypeProperty ;
+    rdfs:label "business value"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The business value assigned to a user story or epic"@en .
+
+sro:hasSprintGoal a owl:DatatypeProperty ;
+    rdfs:label "sprint goal"@en ;
+    rdfs:domain sro:Sprint ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The goal or objective of a sprint"@en .
 
 sro:timeEstimate a owl:DatatypeProperty ;
     rdfs:label "time estimate"@en ;
@@ -1107,11 +1236,11 @@ eo:hasRole a owl:DatatypeProperty ;
 
 ## Status Properties
 
-spo:status a owl:DatatypeProperty ;
-    rdfs:label "status"@en ;
-    rdfs:domain eo:Entity ;
-    rdfs:range xsd:string ;
-    rdfs:comment "Current status"@en .
+sro:stateIndex a owl:DatatypeProperty ;
+    rdfs:label "state index"@en ;
+    rdfs:domain sro:State ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The integer index associated with a state"@en .
 
 sro:isAccepted a owl:DatatypeProperty ;
     rdfs:label "is accepted"@en ;
@@ -1455,7 +1584,7 @@ spo:dependsOn a owl:AsymmetricProperty .
 #
 # ex:US1 a sro:AtomicUserStory ;
 #     eo:name "User Login Feature" ;
-#     sro:importance 10 ;
+#     sro:priority 10 ;
 #     sro:effort 5 ;
 #     sro:hasAcceptanceCriterion ex:AC1 .
 #
