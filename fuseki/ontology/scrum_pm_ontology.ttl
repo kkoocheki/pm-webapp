@@ -1,0 +1,1608 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix dc:     <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+
+# Ontology Namespaces
+@prefix sro:    <https://www.knoid.io/ontologies/sro#> .
+@prefix pm:     <https://www.knoid.io/ontologies/pm#> .
+@prefix spo:    <https://www.knoid.io/ontologies/spo#> .
+@prefix eo:     <https://www.knoid.io/ontologies/eo#> .
+@prefix rsro:   <https://www.knoid.io/ontologies/rsro#> .
+
+# ============================================================================
+# ONTOLOGY METADATA
+# ============================================================================
+
+sro: a owl:Ontology ;
+    dc:title "Scrum Project Management Reference Ontology"@en ;
+    dc:description """A comprehensive reference ontology for Scrum-based project management 
+    that integrates Scrum Reference Ontology (SRO) concepts with project management practices.
+    Designed to support semantic integration, knowledge representation, and automated reasoning 
+    for Scrum projects."""@en ;
+    dc:creator "Knoid Development Team" ;
+    dcterms:created "2025-01-29"^^xsd:date ;
+    dcterms:modified "2025-11-04"^^xsd:date ;
+    owl:versionInfo "1.0.1" ;
+    rdfs:comment """This ontology is based on:
+    - The Scrum Reference Ontology (Santos et al., 2021)
+    - Apache Jena ontology framework
+    - Software Engineering Ontology Network (SEON)
+    - Project Management Body of Knowledge (PMBOK)"""@en ;
+    owl:imports <http://www.w3.org/ns/prov#> .
+
+# ============================================================================
+# CORE DOMAIN CLASSES - FOUNDATIONAL ONTOLOGY LAYER
+# ============================================================================
+
+## Abstract Entity Classes
+eo:Entity a owl:Class ;
+    rdfs:label "Entity"@en ;
+    rdfs:comment "The most general class representing anything that exists in the domain"@en .
+
+eo:Agent a owl:Class ;
+    rdfs:subClassOf eo:Entity ;
+    rdfs:label "Agent"@en ;
+    rdfs:comment "An entity capable of performing actions"@en .
+
+eo:Endurant a owl:Class ;
+    rdfs:subClassOf eo:Entity ;
+    rdfs:label "Endurant"@en ;
+    rdfs:comment "An entity that exists in time and can change while maintaining identity"@en .
+
+eo:Perdurant a owl:Class ;
+    rdfs:subClassOf eo:Entity ;
+    rdfs:label "Perdurant"@en ;
+    rdfs:comment "An entity that unfolds in time (events, processes, activities)"@en .
+
+# ============================================================================
+# ORGANIZATIONAL STRUCTURE - Enterprise Ontology (EO)
+# ============================================================================
+
+eo:Organization a owl:Class ;
+    rdfs:subClassOf eo:Agent ;
+    rdfs:label "Organization"@en ;
+    rdfs:comment "A social entity established to pursue collective goals"@en .
+
+eo:Person a owl:Class ;
+    rdfs:subClassOf eo:Agent ;
+    rdfs:label "Person"@en ;
+    rdfs:comment "A human being"@en ;
+    owl:disjointWith eo:Organization .
+
+eo:AIAgent a owl:Class ;
+    rdfs:subClassOf eo:Agent ;
+    rdfs:label "AI Agent"@en ;
+    rdfs:comment "An artificial intelligence entity capable of performing actions"@en ;
+    owl:disjointWith eo:Organization .
+
+eo:Team a owl:Class ;
+    rdfs:subClassOf eo:Agent ;
+    rdfs:label "Team"@en ;
+    rdfs:comment "A group of people organized to work together towards a common goal"@en .
+
+eo:TeamMember a owl:Class ;
+    rdfs:subClassOf eo:Person ;
+    rdfs:label "Team Member"@en ;
+    rdfs:comment "A person who is part of a team"@en .
+
+eo:OrganizationalRole a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Organizational Role"@en ;
+    rdfs:comment "A position or function recognized by the organization"@en .
+
+eo:TeamMembership a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Team Membership"@en ;
+    rdfs:comment "The relation allocating a team member to play a role in a team"@en .
+
+# ============================================================================
+# SOFTWARE PROJECT - Software Process Ontology (SPO)
+# ============================================================================
+
+spo:Project a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Project"@en ;
+    rdfs:comment "A temporary endeavor undertaken to create a unique product, service, or result"@en .
+
+spo:SoftwareProject a owl:Class ;
+    rdfs:subClassOf spo:Project ;
+    rdfs:label "Software Project"@en ;
+    rdfs:comment "A project related to software development or maintenance"@en .
+
+spo:ProjectStakeholder a owl:Class ;
+    rdfs:subClassOf eo:Agent ;
+    rdfs:label "Project Stakeholder"@en ;
+    rdfs:comment "An agent interested in or affected by a project"@en .
+
+spo:ProjectPersonStakeholder a owl:Class ;
+    rdfs:subClassOf spo:ProjectStakeholder, eo:Person ;
+    rdfs:label "Project Person Stakeholder"@en ;
+    rdfs:comment "A person who is a stakeholder in a project"@en .
+
+spo:ProjectTeamStakeholder a owl:Class ;
+    rdfs:subClassOf spo:ProjectStakeholder, eo:Team ;
+    rdfs:label "Project Team Stakeholder"@en ;
+    rdfs:comment "A team that is a stakeholder in a project"@en .
+
+# ============================================================================
+# PROCESS AND ACTIVITY - Software Process Ontology (SPO)
+# ============================================================================
+
+spo:Process a owl:Class ;
+    rdfs:subClassOf eo:Perdurant ;
+    rdfs:label "Process"@en ;
+    rdfs:comment "A set of interrelated activities performed to achieve a specific objective"@en .
+
+spo:IntendedProcess a owl:Class ;
+    rdfs:subClassOf spo:Process ;
+    rdfs:label "Intended Process"@en ;
+    rdfs:comment "A process intended to be performed; the planned process"@en .
+
+spo:PerformedProcess a owl:Class ;
+    rdfs:subClassOf spo:Process ;
+    rdfs:label "Performed Process"@en ;
+    rdfs:comment "A process that was actually executed"@en ;
+    owl:disjointWith spo:IntendedProcess .
+
+spo:IntendedProjectProcess a owl:Class ;
+    rdfs:subClassOf spo:IntendedProcess ;
+    rdfs:label "Intended Project Process"@en ;
+    rdfs:comment "A process intended for a specific project"@en .
+
+spo:PerformedProjectProcess a owl:Class ;
+    rdfs:subClassOf spo:PerformedProcess ;
+    rdfs:label "Performed Project Process"@en ;
+    rdfs:comment "A process performed in a specific project"@en .
+
+spo:GeneralPerformedProjectProcess a owl:Class ;
+    rdfs:subClassOf spo:PerformedProjectProcess ;
+    rdfs:label "General Performed Project Process"@en ;
+    rdfs:comment "The overall process performed in a project"@en .
+
+spo:SpecificPerformedProjectProcess a owl:Class ;
+    rdfs:subClassOf spo:PerformedProjectProcess ;
+    rdfs:label "Specific Performed Project Process"@en ;
+    rdfs:comment "A subprocess with a specific purpose within a project"@en .
+
+spo:Activity a owl:Class ;
+    rdfs:subClassOf eo:Perdurant ;
+    rdfs:label "Activity"@en ;
+    rdfs:comment "An action or task performed as part of a process"@en .
+
+spo:IntendedActivity a owl:Class ;
+    rdfs:subClassOf spo:Activity ;
+    rdfs:label "Intended Activity"@en ;
+    rdfs:comment "A planned activity"@en .
+
+spo:PerformedActivity a owl:Class ;
+    rdfs:subClassOf spo:Activity ;
+    rdfs:label "Performed Activity"@en ;
+    rdfs:comment "An activity that was actually executed"@en ;
+    owl:disjointWith spo:IntendedActivity .
+
+spo:PerformedProjectActivity a owl:Class ;
+    rdfs:subClassOf spo:PerformedActivity ;
+    rdfs:label "Performed Project Activity"@en ;
+    rdfs:comment "An activity performed in a specific project"@en .
+
+# ============================================================================
+# ARTIFACTS AND DOCUMENTS - Software Process Ontology (SPO)
+# ============================================================================
+
+spo:Artifact a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Artifact"@en ;
+    rdfs:comment "Any tangible by-product of the software process"@en .
+
+spo:SoftwareProduct a owl:Class ;
+    rdfs:subClassOf spo:Artifact ;
+    rdfs:label "Software Product"@en ;
+    rdfs:comment "One or more computer programs with auxiliary items ready for use"@en .
+
+spo:SoftwareItem a owl:Class ;
+    rdfs:subClassOf spo:Artifact ;
+    rdfs:label "Software Item"@en ;
+    rdfs:comment "A piece of software as an intermediary result"@en .
+
+spo:InformationItem a owl:Class ;
+    rdfs:subClassOf spo:Artifact ;
+    rdfs:label "Information Item"@en ;
+    rdfs:comment "Relevant information for human use in the software process"@en .
+
+spo:Document a owl:Class ;
+    rdfs:subClassOf spo:Artifact ;
+    rdfs:label "Document"@en ;
+    rdfs:comment "Written or pictorial information in a predefined format"@en .
+
+# ============================================================================
+# REQUIREMENTS - Reference Software Requirements Ontology (RSRO)
+# ============================================================================
+
+rsro:Requirement a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Requirement"@en ;
+    rdfs:comment "A condition or capacity needed for a user or system"@en .
+
+rsro:FunctionalRequirement a owl:Class ;
+    rdfs:subClassOf rsro:Requirement ;
+    rdfs:label "Functional Requirement"@en ;
+    rdfs:comment "A requirement specifying what the system should do"@en .
+
+rsro:NonFunctionalRequirement a owl:Class ;
+    rdfs:subClassOf rsro:Requirement ;
+    rdfs:label "Non-Functional Requirement"@en ;
+    rdfs:comment "A requirement specifying quality attributes or constraints"@en ;
+    owl:disjointWith rsro:FunctionalRequirement .
+
+rsro:RequirementArtifact a owl:Class ;
+    rdfs:subClassOf spo:InformationItem ;
+    rdfs:label "Requirement Artifact"@en ;
+    rdfs:comment "An artifact that describes requirements"@en .
+
+rsro:RequirementDocument a owl:Class ;
+    rdfs:subClassOf spo:Document ;
+    rdfs:label "Requirement Document"@en ;
+    rdfs:comment "A document composed of requirement artifacts"@en .
+
+# ============================================================================
+# SCRUM PROJECT - Scrum Reference Ontology (SRO)
+# ============================================================================
+
+sro:ScrumProject a owl:Class ;
+    rdfs:subClassOf spo:SoftwareProject ;
+    rdfs:label "Scrum Project"@en ;
+    rdfs:comment "A software project that adopts the Scrum framework"@en ;
+    skos:definition "A project following the Scrum methodology with iterative sprints"@en .
+
+sro:ScrumComplexProject a owl:Class ;
+    rdfs:subClassOf sro:ScrumProject ;
+    rdfs:label "Scrum Complex Project"@en ;
+    rdfs:comment "A Scrum project composed of multiple sub-projects or teams"@en .
+
+sro:ScrumAtomicProject a owl:Class ;
+    rdfs:subClassOf sro:ScrumProject ;
+    rdfs:label "Scrum Atomic Project"@en ;
+    rdfs:comment "A Scrum project that is not decomposed into sub-projects"@en ;
+    owl:disjointWith sro:ScrumComplexProject .
+
+# ============================================================================
+# SCRUM PROCESS - Scrum Reference Ontology (SRO)
+# ============================================================================
+
+sro:ScrumProcess a owl:Class ;
+    rdfs:subClassOf spo:GeneralPerformedProjectProcess ;
+    rdfs:label "Scrum Process"@en ;
+    rdfs:comment "The overall Scrum process performed in a project"@en ;
+    skos:definition "A general performed process that implements the Scrum framework"@en .
+
+sro:ProductBacklogDefinition a owl:Class ;
+    rdfs:subClassOf spo:SpecificPerformedProjectProcess ;
+    rdfs:label "Product Backlog Definition"@en ;
+    rdfs:comment "The process of defining and prioritizing the product backlog"@en .
+
+sro:Sprint a owl:Class ;
+    rdfs:subClassOf spo:SpecificPerformedProjectProcess ;
+    rdfs:label "Sprint"@en ;
+    rdfs:comment "A time-boxed iteration in Scrum, typically 1-4 weeks"@en ;
+    skos:definition "A time-boxed iteration during which a potentially shippable product increment is created"@en .
+
+sro:State a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "State"@en ;
+    rdfs:comment "The state of a work item (e.g., ToDo, InProgress, Done)"@en ;
+    owl:oneOf (
+        sro:Backlog
+        sro:ToDo
+        sro:InProgress
+        sro:InReview
+        sro:Done
+        sro:Cancelled
+        sro:Duplicate
+    ) .
+
+sro:Backlog a sro:State ;
+    rdfs:label "Backlog"@en ;
+    sro:stateIndex "1"^^xsd:integer ;
+    rdfs:comment "Work item is in the backlog and not yet selected for a sprint"@en .
+
+sro:ToDo a sro:State ;
+    rdfs:label "To Do"@en ;
+    sro:stateIndex "2"^^xsd:integer ;
+    rdfs:comment "Work item is planned but not started"@en .
+
+sro:InProgress a sro:State ;
+    rdfs:label "In Progress"@en ;
+    sro:stateIndex "3"^^xsd:integer ;
+    rdfs:comment "Work item is currently being worked on"@en .
+
+sro:InReview a sro:State ;
+    rdfs:label "In Review"@en ;
+    sro:stateIndex "4"^^xsd:integer ;
+    rdfs:comment "Work item is completed and waiting for review"@en .
+
+sro:Done a sro:State ;
+    rdfs:label "Done"@en ;
+    sro:stateIndex "5"^^xsd:integer ;
+    rdfs:comment "Work item is completed"@en .
+
+sro:Cancelled a sro:State ;
+    rdfs:label "Cancelled"@en ;
+    sro:stateIndex "6"^^xsd:integer ;
+    rdfs:comment "Work item has been cancelled"@en .
+
+sro:Duplicate a sro:State ;
+    rdfs:label "Duplicate"@en ;
+    sro:stateIndex "7"^^xsd:integer ;
+    rdfs:comment "Work item is a duplicate of another item"@en .
+
+sro:Priority a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Priority"@en ;
+    rdfs:comment "The priority of a work item"@en ;
+    owl:oneOf (
+        sro:NoPriority
+        sro:Urgent
+        sro:High
+        sro:Medium
+        sro:Low
+    ) .
+
+sro:NoPriority a sro:Priority ;
+    rdfs:label "No Priority"@en ;
+    sro:priorityIndex "0"^^xsd:integer .
+
+sro:Urgent a sro:Priority ;
+    rdfs:label "Urgent"@en ;
+    sro:priorityIndex "1"^^xsd:integer .
+
+sro:High a sro:Priority ;
+    rdfs:label "High"@en ;
+    sro:priorityIndex "2"^^xsd:integer .
+
+sro:Medium a sro:Priority ;
+    rdfs:label "Medium"@en ;
+    sro:priorityIndex "3"^^xsd:integer .
+
+sro:Low a sro:Priority ;
+    rdfs:label "Low"@en ;
+    sro:priorityIndex "4"^^xsd:integer .
+
+# ============================================================================
+# SCRUM CEREMONIES - Scrum Reference Ontology (SRO)
+# ============================================================================
+
+sro:Ceremony a owl:Class ;
+    rdfs:subClassOf spo:PerformedProjectActivity ;
+    rdfs:label "Ceremony"@en ;
+    rdfs:comment "A formal Scrum event or meeting"@en .
+
+sro:PlanningMeeting a owl:Class ;
+    rdfs:subClassOf sro:Ceremony ;
+    rdfs:label "Planning Meeting"@en ;
+    rdfs:comment "Sprint planning meeting to select backlog items and plan work"@en ;
+    skos:definition "A ceremony where the team selects user stories and plans tasks for the sprint"@en .
+
+sro:DailyStandupMeeting a owl:Class ;
+    rdfs:subClassOf sro:Ceremony ;
+    rdfs:label "Daily Standup Meeting"@en ;
+    rdfs:comment "Daily synchronization meeting for the development team"@en ;
+    skos:definition "A short daily meeting where team members synchronize their work"@en .
+
+sro:ReviewMeeting a owl:Class ;
+    rdfs:subClassOf sro:Ceremony ;
+    rdfs:label "Review Meeting"@en ;
+    rdfs:comment "Sprint review meeting to inspect the increment"@en ;
+    skos:definition "A ceremony where the team demonstrates completed work to stakeholders"@en .
+
+sro:RetrospectiveMeeting a owl:Class ;
+    rdfs:subClassOf sro:Ceremony ;
+    rdfs:label "Retrospective Meeting"@en ;
+    rdfs:comment "Sprint retrospective meeting for team reflection and improvement"@en ;
+    skos:definition "A ceremony where the team reflects on the sprint and identifies improvements"@en .
+
+# ============================================================================
+# SCRUM ROLES - Scrum Reference Ontology (SRO)
+# ============================================================================
+
+sro:ScrumTeamMember a owl:Class ;
+    rdfs:subClassOf spo:ProjectPersonStakeholder, eo:TeamMember ;
+    rdfs:label "Scrum Team Member"@en ;
+    rdfs:comment "A person who is a member of a Scrum team"@en .
+
+sro:ScrumRole a owl:Class ;
+    rdfs:subClassOf eo:OrganizationalRole ;
+    rdfs:label "Scrum Role"@en ;
+    rdfs:comment "An organizational role defined within the Scrum framework"@en .
+
+sro:ProductOwnerRole a owl:Class ;
+    rdfs:subClassOf sro:ScrumRole ;
+    rdfs:label "Product Owner Role"@en ;
+    rdfs:comment "The role responsible for maximizing product value"@en .
+
+sro:ScrumMasterRole a owl:Class ;
+    rdfs:subClassOf sro:ScrumRole ;
+    rdfs:label "Scrum Master Role"@en ;
+    rdfs:comment "The role responsible for facilitating the Scrum process"@en .
+
+sro:DeveloperRole a owl:Class ;
+    rdfs:subClassOf sro:ScrumRole ;
+    rdfs:label "Developer Role"@en ;
+    rdfs:comment "The role responsible for developing the product"@en .
+
+sro:ProductOwner a owl:Class ;
+    rdfs:subClassOf sro:ScrumTeamMember ;
+    rdfs:label "Product Owner"@en ;
+    rdfs:comment "A team member playing the Product Owner role"@en .
+
+sro:ProductOwnerClient a owl:Class ;
+    rdfs:subClassOf sro:ProductOwner ;
+    rdfs:label "Product Owner Client"@en ;
+    rdfs:comment "A Product Owner who is also the client"@en .
+
+sro:ProductOwnerProjectStakeholder a owl:Class ;
+    rdfs:subClassOf sro:ProductOwner ;
+    rdfs:label "Product Owner Project Stakeholder"@en ;
+    rdfs:comment "A Product Owner representing the client's interests"@en ;
+    owl:disjointWith sro:ProductOwnerClient .
+
+sro:ScrumMaster a owl:Class ;
+    rdfs:subClassOf sro:ScrumTeamMember ;
+    rdfs:label "Scrum Master"@en ;
+    rdfs:comment "A team member playing the Scrum Master role"@en .
+
+sro:Developer a owl:Class ;
+    rdfs:subClassOf sro:ScrumTeamMember ;
+    rdfs:label "Developer"@en ;
+    rdfs:comment "A team member playing the Developer role"@en .
+
+sro:Client a owl:Class ;
+    rdfs:subClassOf spo:ProjectPersonStakeholder ;
+    rdfs:label "Client"@en ;
+    rdfs:comment "The person or organization for whom the product is developed"@en .
+
+# ============================================================================
+# SCRUM TEAMS - Scrum Reference Ontology (SRO)
+# ============================================================================
+
+sro:ScrumTeam a owl:Class ;
+    rdfs:subClassOf spo:ProjectTeamStakeholder ;
+    rdfs:label "Scrum Team"@en ;
+    rdfs:comment "A cross-functional team in a Scrum project"@en ;
+    skos:definition "A self-organizing team consisting of Product Owner, Scrum Master, and Developers"@en .
+
+sro:DevelopmentTeam a owl:Class ;
+    rdfs:subClassOf eo:Team ;
+    rdfs:label "Development Team"@en ;
+    rdfs:comment "The subset of the Scrum team responsible for developing the product"@en .
+
+sro:ProductOwnerMembership a owl:Class ;
+    rdfs:subClassOf eo:TeamMembership ;
+    rdfs:label "Product Owner Membership"@en ;
+    rdfs:comment "Allocation of a person to play the Product Owner role"@en .
+
+sro:ScrumMasterMembership a owl:Class ;
+    rdfs:subClassOf eo:TeamMembership ;
+    rdfs:label "Scrum Master Membership"@en ;
+    rdfs:comment "Allocation of a person to play the Scrum Master role"@en .
+
+sro:DeveloperMembership a owl:Class ;
+    rdfs:subClassOf eo:TeamMembership ;
+    rdfs:label "Developer Membership"@en ;
+    rdfs:comment "Allocation of a person to play the Developer role"@en .
+
+# ============================================================================
+# PRODUCT BACKLOG - Scrum Reference Ontology (SRO)
+# ============================================================================
+
+sro:ProductBacklog a owl:Class ;
+    rdfs:subClassOf rsro:RequirementDocument ;
+    rdfs:label "Product Backlog"@en ;
+    rdfs:comment "An ordered list of everything needed in the product"@en ;
+    skos:definition "A prioritized list of user stories and requirements for the product"@en .
+
+sro:UserStory a owl:Class ;
+    rdfs:subClassOf rsro:RequirementArtifact ;
+    rdfs:label "User Story"@en ;
+    rdfs:comment "A requirement expressed from the user's perspective"@en ;
+    skos:definition "A short description of a feature from the end user's perspective"@en .
+
+sro:Epic a owl:Class ;
+    rdfs:subClassOf sro:UserStory ;
+    rdfs:label "Epic"@en ;
+    rdfs:comment "A large user story that can be decomposed into smaller ones"@en .
+
+sro:AtomicUserStory a owl:Class ;
+    rdfs:subClassOf sro:UserStory ;
+    rdfs:label "Atomic User Story"@en ;
+    rdfs:comment "A user story that is not further decomposed"@en ;
+    owl:disjointWith sro:Epic .
+
+sro:AcceptanceCriterion a owl:Class ;
+    rdfs:subClassOf rsro:Requirement ;
+    rdfs:label "Acceptance Criterion"@en ;
+    rdfs:comment "A condition to verify if a user story is correctly implemented"@en .
+
+sro:FunctionalAcceptanceCriterion a owl:Class ;
+    rdfs:subClassOf sro:AcceptanceCriterion, rsro:FunctionalRequirement ;
+    rdfs:label "Functional Acceptance Criterion"@en ;
+    rdfs:comment "Acceptance criteria related to functional behavior"@en .
+
+sro:NonFunctionalAcceptanceCriterion a owl:Class ;
+    rdfs:subClassOf sro:AcceptanceCriterion, rsro:NonFunctionalRequirement ;
+    rdfs:label "Non-Functional Acceptance Criterion"@en ;
+    rdfs:comment "Acceptance criteria related to quality attributes"@en ;
+    owl:disjointWith sro:FunctionalAcceptanceCriterion .
+
+# ============================================================================
+# SPRINT BACKLOG - Scrum Reference Ontology (SRO)
+# ============================================================================
+
+sro:SprintBacklog a owl:Class ;
+    rdfs:subClassOf spo:Document ;
+    rdfs:label "Sprint Backlog"@en ;
+    rdfs:comment "The set of user stories and tasks selected for a sprint"@en ;
+    skos:definition "A plan for delivering the product increment and achieving the sprint goal"@en .
+
+sro:ScrumDevelopmentTask a owl:Class ;
+    rdfs:subClassOf spo:Activity ;
+    rdfs:label "Scrum Development Task"@en ;
+    rdfs:comment "A task performed to materialize a user story"@en .
+
+sro:IntendedScrumDevelopmentTask a owl:Class ;
+    rdfs:subClassOf sro:ScrumDevelopmentTask, spo:IntendedActivity ;
+    rdfs:label "Intended Scrum Development Task"@en ;
+    rdfs:comment "A planned development task"@en .
+
+sro:PerformedScrumDevelopmentTask a owl:Class ;
+    rdfs:subClassOf sro:ScrumDevelopmentTask, spo:PerformedProjectActivity ;
+    rdfs:label "Performed Scrum Development Task"@en ;
+    rdfs:comment "A development task that was actually performed"@en ;
+    owl:disjointWith sro:IntendedScrumDevelopmentTask .
+
+# ============================================================================
+# DELIVERABLES - Scrum Reference Ontology (SRO)
+# ============================================================================
+
+sro:Deliverable a owl:Class ;
+    rdfs:subClassOf spo:SoftwareItem ;
+    rdfs:label "Deliverable"@en ;
+    rdfs:comment "A software item that materializes user stories"@en .
+
+sro:AcceptedDeliverable a owl:Class ;
+    rdfs:subClassOf sro:Deliverable ;
+    rdfs:label "Accepted Deliverable"@en ;
+    rdfs:comment "A deliverable that meets all acceptance criteria (Done)"@en .
+
+sro:NotAcceptedDeliverable a owl:Class ;
+    rdfs:subClassOf sro:Deliverable ;
+    rdfs:label "Not Accepted Deliverable"@en ;
+    rdfs:comment "A deliverable that doesn't meet acceptance criteria"@en ;
+    owl:disjointWith sro:AcceptedDeliverable .
+
+sro:SuccessfullyPerformedScrumDevelopmentTask a owl:Class ;
+    rdfs:subClassOf sro:PerformedScrumDevelopmentTask ;
+    rdfs:label "Successfully Performed Scrum Development Task"@en ;
+    rdfs:comment "A task that produced only accepted deliverables"@en .
+
+sro:NonSuccessfullyPerformedScrumDevelopmentTask a owl:Class ;
+    rdfs:subClassOf sro:PerformedScrumDevelopmentTask ;
+    rdfs:label "Non-Successfully Performed Scrum Development Task"@en ;
+    rdfs:comment "A task that produced at least one not accepted deliverable"@en ;
+    owl:disjointWith sro:SuccessfullyPerformedScrumDevelopmentTask .
+
+sro:SprintDeliverable a owl:Class ;
+    rdfs:subClassOf spo:SoftwareItem ;
+    rdfs:label "Sprint Deliverable"@en ;
+    rdfs:comment "The integrated result delivered at the end of a sprint"@en .
+
+sro:ScrumProjectDeliverable a owl:Class ;
+    rdfs:subClassOf spo:SoftwareProduct ;
+    rdfs:label "Scrum Project Deliverable"@en ;
+    rdfs:comment "The final software product delivered by the Scrum project"@en .
+
+# ============================================================================
+# PROJECT MANAGEMENT EXTENSIONS - PM Ontology
+# ============================================================================
+
+pm:Activity a owl:Class ;
+    rdfs:subClassOf spo:PerformedProjectActivity ;
+    rdfs:label "Project Management Activity"@en ;
+    rdfs:comment "A general activity in project management context"@en .
+
+pm:Task a owl:Class ;
+    rdfs:subClassOf pm:Activity ;
+    rdfs:label "Task"@en ;
+    rdfs:comment "A unit of work in project management"@en .
+
+
+
+
+pm:Dependency a owl:Class ;
+    rdfs:subClassOf eo:Perdurant ;
+    rdfs:label "Dependency"@en ;
+    rdfs:comment "A relationship between two activities indicating precedence"@en .
+
+pm:DependencyType a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Dependency Type"@en ;
+    rdfs:comment "The type of dependency relationship"@en ;
+    owl:oneOf (
+        pm:FinishToStart
+        pm:StartToStart
+        pm:FinishToFinish
+        pm:StartToFinish
+    ) .
+
+# ============================================================================
+# CRITICAL PATH METHOD (CPM) - PM Ontology
+# ============================================================================
+
+pm:CriticalPathAnalysis a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Critical Path Analysis"@en ;
+    rdfs:comment "An analysis result containing critical path information for a project"@en ;
+    skos:definition "The result of applying the Critical Path Method to determine the longest path through a project network"@en .
+
+pm:CriticalPath a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Critical Path"@en ;
+    rdfs:comment "A sequence of dependent activities that determines the minimum project duration"@en ;
+    skos:definition "The longest path through a directed acyclic graph (DAG) of project activities"@en .
+
+pm:CriticalTask a owl:Class ;
+    rdfs:subClassOf pm:Task ;
+    rdfs:label "Critical Task"@en ;
+    rdfs:comment "A task with zero total float that lies on the critical path"@en ;
+    skos:definition "A task whose delay will directly impact the project completion date"@en .
+
+pm:NonCriticalTask a owl:Class ;
+    rdfs:subClassOf pm:Task ;
+    rdfs:label "Non-Critical Task"@en ;
+    rdfs:comment "A task with positive total float that is not on the critical path"@en ;
+    owl:disjointWith pm:CriticalTask .
+
+pm:Milestone a owl:Class ;
+    rdfs:subClassOf pm:Task ;
+    rdfs:label "Milestone"@en ;
+    rdfs:comment "A significant point or event in the project with zero duration"@en ;
+    skos:definition "A task representing a key event or deliverable with no work effort"@en .
+
+pm:CriticalDependency a owl:Class ;
+    rdfs:subClassOf pm:Dependency ;
+    rdfs:label "Critical Dependency"@en ;
+    rdfs:comment "A dependency relationship between two critical tasks on the critical path"@en .
+
+pm:TaskSchedule a owl:Class ;
+    rdfs:subClassOf eo:Endurant ;
+    rdfs:label "Task Schedule"@en ;
+    rdfs:comment "Scheduling information for a task including early/late start and finish times"@en .
+
+# Dependency Type Instances
+pm:FinishToStart a pm:DependencyType ;
+    rdfs:label "Finish to Start"@en ;
+    skos:definition "Successor cannot start until predecessor finishes"@en .
+
+pm:StartToStart a pm:DependencyType ;
+    rdfs:label "Start to Start"@en ;
+    skos:definition "Successor cannot start until predecessor starts"@en .
+
+pm:FinishToFinish a pm:DependencyType ;
+    rdfs:label "Finish to Finish"@en ;
+    skos:definition "Successor cannot finish until predecessor finishes"@en .
+
+pm:StartToFinish a pm:DependencyType ;
+    rdfs:label "Start to Finish"@en ;
+    skos:definition "Successor cannot finish until predecessor starts"@en .
+
+# ============================================================================
+# OBJECT PROPERTIES - RELATIONSHIPS
+# ============================================================================
+
+## Organizational Relationships
+
+eo:belongsToOrganization a owl:ObjectProperty ;
+    rdfs:label "belongs to organization"@en ;
+    rdfs:domain eo:TeamMember ;
+    rdfs:range eo:Organization ;
+    rdfs:comment "Relates a team member to their organization"@en .
+
+eo:hasTeamMember a owl:ObjectProperty ;
+    rdfs:label "has team member"@en ;
+    rdfs:domain eo:Team ;
+    rdfs:range eo:TeamMember ;
+    rdfs:comment "Relates a team to its members"@en .
+
+eo:playsRole a owl:ObjectProperty ;
+    rdfs:label "plays role"@en ;
+    rdfs:domain eo:TeamMember ;
+    rdfs:range eo:OrganizationalRole ;
+    rdfs:comment "Relates a team member to their organizational role"@en .
+
+eo:allocatesTo a owl:ObjectProperty ;
+    rdfs:label "allocates to"@en ;
+    rdfs:domain eo:TeamMembership ;
+    rdfs:range eo:Team ;
+    rdfs:comment "Allocates a team membership to a team"@en .
+
+## Project Relationships
+
+spo:hasProject a owl:ObjectProperty ;
+    rdfs:label "has project"@en ;
+    rdfs:domain eo:Organization ;
+    rdfs:range spo:Project ;
+    rdfs:comment "Relates an organization to its projects"@en .
+
+spo:hasStakeholder a owl:ObjectProperty ;
+    rdfs:label "has stakeholder"@en ;
+    rdfs:domain spo:Project ;
+    rdfs:range spo:ProjectStakeholder ;
+    rdfs:comment "Relates a project to its stakeholders"@en .
+
+spo:interestedIn a owl:ObjectProperty ;
+    rdfs:label "interested in"@en ;
+    rdfs:domain spo:ProjectStakeholder ;
+    rdfs:range spo:Project ;
+    owl:inverseOf spo:hasStakeholder ;
+    rdfs:comment "Relates a stakeholder to projects they're interested in"@en .
+
+sro:hasSubProject a owl:ObjectProperty ;
+    rdfs:label "has sub-project"@en ;
+    rdfs:domain sro:ScrumComplexProject ;
+    rdfs:range sro:ScrumAtomicProject ;
+    rdfs:comment "Relates a complex project to its sub-projects"@en .
+
+## Process and Activity Relationships
+
+spo:hasProcess a owl:ObjectProperty ;
+    rdfs:label "has process"@en ;
+    rdfs:domain spo:Project ;
+    rdfs:range spo:Process ;
+    rdfs:comment "Relates a project to its processes"@en .
+
+spo:composedOf a owl:ObjectProperty ;
+    rdfs:label "composed of"@en ;
+    rdfs:domain spo:Process ;
+    rdfs:range spo:Activity ;
+    rdfs:comment "Relates a process to its component activities"@en .
+
+spo:partOf a owl:ObjectProperty ;
+    rdfs:label "part of"@en ;
+    rdfs:domain spo:Activity ;
+    rdfs:range spo:Process ;
+    owl:inverseOf spo:composedOf ;
+    rdfs:comment "Relates an activity to the process it's part of"@en .
+
+spo:dependsOn a owl:ObjectProperty ;
+    rdfs:label "depends on"@en ;
+    rdfs:domain spo:Activity ;
+    rdfs:range spo:Activity ;
+    rdfs:comment "Indicates that one activity depends on another"@en .
+
+spo:causedBy a owl:ObjectProperty ;
+    rdfs:label "caused by"@en ;
+    rdfs:domain spo:PerformedActivity ;
+    rdfs:range spo:IntendedActivity ;
+    rdfs:comment "Relates a performed activity to the intention that caused it"@en .
+
+## Stakeholder Participation
+
+spo:isInChargeOf a owl:ObjectProperty ;
+    rdfs:label "is in charge of"@en ;
+    rdfs:domain spo:ProjectStakeholder ;
+    rdfs:range spo:PerformedActivity ;
+    rdfs:comment "Indicates stakeholder responsibility for an activity"@en .
+
+spo:participatesIn a owl:ObjectProperty ;
+    rdfs:label "participates in"@en ;
+    rdfs:domain spo:ProjectStakeholder ;
+    rdfs:range spo:PerformedActivity ;
+    rdfs:comment "Indicates stakeholder participation in an activity"@en .
+
+## Artifact Relationships
+
+spo:creates a owl:ObjectProperty ;
+    rdfs:label "creates"@en ;
+    rdfs:domain spo:PerformedActivity ;
+    rdfs:range spo:Artifact ;
+    rdfs:comment "Relates an activity to artifacts it creates"@en .
+
+spo:uses a owl:ObjectProperty ;
+    rdfs:label "uses"@en ;
+    rdfs:domain spo:PerformedActivity ;
+    rdfs:range spo:Artifact ;
+    rdfs:comment "Relates an activity to artifacts it uses"@en .
+
+spo:changes a owl:ObjectProperty ;
+    rdfs:label "changes"@en ;
+    rdfs:domain spo:PerformedActivity ;
+    rdfs:range spo:Artifact ;
+    rdfs:comment "Relates an activity to artifacts it modifies"@en .
+
+spo:describes a owl:ObjectProperty ;
+    rdfs:label "describes"@en ;
+    rdfs:domain spo:Document ;
+    rdfs:range spo:Artifact ;
+    rdfs:comment "Relates a document to what it describes"@en .
+
+## Requirement Relationships
+
+rsro:hasRequirement a owl:ObjectProperty ;
+    rdfs:label "has requirement"@en ;
+    rdfs:domain spo:Project ;
+    rdfs:range rsro:Requirement ;
+    rdfs:comment "Relates a project to its requirements"@en .
+
+rsro:describesRequirement a owl:ObjectProperty ;
+    rdfs:label "describes requirement"@en ;
+    rdfs:domain rsro:RequirementArtifact ;
+    rdfs:range rsro:Requirement ;
+    rdfs:comment "Relates a requirement artifact to the requirement it describes"@en .
+
+## Scrum-Specific Relationships
+
+sro:hasProductBacklog a owl:ObjectProperty ;
+    rdfs:label "has product backlog"@en ;
+    rdfs:domain sro:ScrumProject ;
+    rdfs:range sro:ProductBacklog ;
+    rdfs:comment "Relates a Scrum project to its product backlog"@en .
+
+sro:hasSprint a owl:ObjectProperty ;
+    rdfs:label "has sprint"@en ;
+    rdfs:domain sro:ScrumProcess ;
+    rdfs:range sro:Sprint ;
+    rdfs:comment "Relates a Scrum process to its sprints"@en .
+
+sro:hasSprintBacklog a owl:ObjectProperty ;
+    rdfs:label "has sprint backlog"@en ;
+    rdfs:domain sro:Sprint ;
+    rdfs:range sro:SprintBacklog ;
+    rdfs:comment "Relates a sprint to its sprint backlog"@en .
+
+sro:hasCeremony a owl:ObjectProperty ;
+    rdfs:label "has ceremony"@en ;
+    rdfs:domain sro:Sprint ;
+    rdfs:range sro:Ceremony ;
+    rdfs:comment "Relates a sprint to its ceremonies"@en .
+
+sro:contains a owl:ObjectProperty ;
+    rdfs:label "contains"@en ;
+    rdfs:domain sro:ProductBacklog ;
+    rdfs:range sro:UserStory ;
+    rdfs:comment "Relates a product backlog to user stories it contains"@en .
+
+sro:selectedFor a owl:ObjectProperty ;
+    rdfs:label "selected for"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range sro:SprintBacklog ;
+    rdfs:comment "Indicates a user story selected for a sprint backlog"@en .
+
+sro:decomposedInto a owl:ObjectProperty ;
+    rdfs:label "decomposed into"@en ;
+    rdfs:domain sro:Epic ;
+    rdfs:range sro:UserStory ;
+    rdfs:comment "Relates an epic to the user stories it's decomposed into"@en .
+
+sro:hasAcceptanceCriterion a owl:ObjectProperty ;
+    rdfs:label "has acceptance criterion"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range sro:AcceptanceCriterion ;
+    rdfs:comment "Relates a user story to its acceptance criteria"@en .
+
+sro:hasState a owl:ObjectProperty ;
+    rdfs:label "has state"@en ;
+    rdfs:domain pm:Activity ;
+    rdfs:range sro:State ;
+    rdfs:comment "Relates an activity to its current state"@en .
+
+sro:hasPriority a owl:ObjectProperty ;
+    rdfs:label "has priority"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range sro:Priority ;
+    rdfs:comment "Relates a user story to its priority"@en .
+
+sro:hasTask a owl:ObjectProperty ;
+    rdfs:label "has task"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range pm:Task ;
+    owl:inverseOf pm:hasParent ;
+    rdfs:comment "Relates a user story to its constituent tasks"@en .
+
+sro:plannedToMaterialize a owl:ObjectProperty ;
+    rdfs:label "planned to materialize"@en ;
+    rdfs:comment "Relates a planned task to the user story it will materialize"@en .
+
+sro:materializes a owl:ObjectProperty ;
+    rdfs:label "materializes"@en ;
+    rdfs:domain sro:Deliverable ;
+    rdfs:range sro:UserStory ;
+    rdfs:comment "Relates a deliverable to the user story it materializes"@en .
+
+sro:produces a owl:ObjectProperty ;
+    rdfs:label "produces"@en ;
+    rdfs:domain sro:PerformedScrumDevelopmentTask ;
+    rdfs:range sro:Deliverable ;
+    rdfs:comment "Relates a performed task to deliverables it produces"@en .
+
+sro:integrates a owl:ObjectProperty ;
+    rdfs:label "integrates"@en ;
+    rdfs:domain sro:SprintDeliverable ;
+    rdfs:range sro:AcceptedDeliverable ;
+    rdfs:comment "Relates a sprint deliverable to accepted deliverables it integrates"@en .
+
+sro:composes a owl:ObjectProperty ;
+    rdfs:label "composes"@en ;
+    rdfs:domain sro:SprintDeliverable ;
+    rdfs:range sro:ScrumProjectDeliverable ;
+    rdfs:comment "Relates sprint deliverables to the final project deliverable"@en .
+
+sro:isInChargeOf a owl:ObjectProperty ;
+    rdfs:label "is in charge of"@en ;
+    rdfs:subPropertyOf spo:isInChargeOf ;
+    rdfs:domain [
+        a owl:Class ;
+        owl:unionOf (
+            sro:ProductOwner
+            sro:ScrumMaster
+            sro:Developer
+        )
+    ] ;
+    rdfs:range [
+        a owl:Class ;
+        owl:unionOf (
+            sro:ProductBacklogDefinition
+            sro:DailyStandupMeeting
+            sro:PerformedScrumDevelopmentTask
+        )
+    ] ;
+    rdfs:comment "Relates Scrum practitioners to the artifacts or activities for which they are accountable"@en .
+
+## PM Dependency Relationships
+
+pm:hasParent a owl:ObjectProperty ;
+    rdfs:label "has parent"@en ;
+    rdfs:domain pm:Activity ;
+    rdfs:range pm:Activity ;
+    rdfs:comment "Hierarchical parent relationship between activities"@en .
+
+pm:precedes a owl:ObjectProperty ;
+    rdfs:label "precedes"@en ;
+    rdfs:domain pm:Activity ;
+    rdfs:range pm:Activity ;
+    rdfs:comment "General precedence relationship between activities"@en .
+
+pm:dependsOn a owl:ObjectProperty ;
+    rdfs:label "depends on"@en ;
+    rdfs:subPropertyOf spo:dependsOn ;
+    rdfs:domain pm:Activity ;
+    rdfs:range pm:Activity ;
+    owl:inverseOf pm:precedes ;
+    rdfs:comment "Indicates dependency between activities"@en .
+
+pm:hasIncomingDependency a owl:ObjectProperty ;
+    rdfs:label "has incoming dependency"@en ;
+    rdfs:domain pm:Activity ;
+    rdfs:range pm:Dependency ;
+    rdfs:comment "Relates an activity to its incoming dependencies"@en .
+
+pm:hasOutgoingDependency a owl:ObjectProperty ;
+    rdfs:label "has outgoing dependency"@en ;
+    rdfs:domain pm:Activity ;
+    rdfs:range pm:Dependency ;
+    rdfs:comment "Relates an activity to its outgoing dependencies"@en .
+
+pm:predecessor a owl:ObjectProperty ;
+    rdfs:label "predecessor"@en ;
+    rdfs:domain pm:Dependency ;
+    rdfs:range pm:Activity ;
+    rdfs:comment "The predecessor activity in a dependency"@en .
+
+pm:successor a owl:ObjectProperty ;
+    rdfs:label "successor"@en ;
+    rdfs:domain pm:Dependency ;
+    rdfs:range pm:Activity ;
+    rdfs:comment "The successor activity in a dependency"@en .
+
+pm:linkType a owl:ObjectProperty ;
+    rdfs:label "link type"@en ;
+    rdfs:domain pm:Dependency ;
+    rdfs:range pm:DependencyType ;
+    rdfs:comment "The type of dependency link"@en .
+
+pm:assignedTo a owl:ObjectProperty ;
+    rdfs:label "assigned to"@en ;
+    rdfs:domain pm:Activity ;
+    rdfs:range sro:ScrumTeamMember ;
+    rdfs:comment "Relates an activity to the team member assigned to it"@en .
+## Critical Path Method Relationships
+
+pm:hasCriticalPath a owl:ObjectProperty ;
+    rdfs:label "has critical path"@en ;
+    rdfs:domain spo:Project ;
+    rdfs:range pm:CriticalPath ;
+    rdfs:comment "Relates a project to its critical path"@en .
+
+pm:hasCriticalPathAnalysis a owl:ObjectProperty ;
+    rdfs:label "has critical path analysis"@en ;
+    rdfs:domain spo:Project ;
+    rdfs:range pm:CriticalPathAnalysis ;
+    rdfs:comment "Relates a project to its CPM analysis results"@en .
+
+pm:onCriticalPath a owl:ObjectProperty ;
+    rdfs:label "on critical path"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range pm:CriticalPath ;
+    rdfs:comment "Indicates that a task is on the critical path"@en .
+
+pm:hasTaskSchedule a owl:ObjectProperty ;
+    rdfs:label "has task schedule"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range pm:TaskSchedule ;
+    rdfs:comment "Relates a task to its schedule information"@en .
+
+pm:includesTask a owl:ObjectProperty ;
+    rdfs:label "includes task"@en ;
+    rdfs:domain pm:CriticalPath ;
+    rdfs:range pm:CriticalTask ;
+    rdfs:comment "Relates a critical path to the tasks it includes"@en .
+
+pm:includesDependency a owl:ObjectProperty ;
+    rdfs:label "includes dependency"@en ;
+    rdfs:domain pm:CriticalPath ;
+    rdfs:range pm:CriticalDependency ;
+    rdfs:comment "Relates a critical path to the critical dependencies it includes"@en .
+
+pm:source a owl:ObjectProperty ;
+    rdfs:label "source"@en ;
+    rdfs:domain pm:Dependency ;
+    rdfs:range pm:Task ;
+    rdfs:comment "The source (predecessor) task in a dependency"@en .
+
+pm:target a owl:ObjectProperty ;
+    rdfs:label "target"@en ;
+    rdfs:domain pm:Dependency ;
+    rdfs:range pm:Task ;
+    rdfs:comment "The target (successor) task in a dependency"@en .
+
+pm:project a owl:ObjectProperty ;
+    rdfs:label "project"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range spo:Project ;
+    rdfs:comment "The project a task belongs to"@en .
+
+pm:parent a owl:ObjectProperty ;
+    rdfs:label "parent"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range pm:Task ;
+    rdfs:comment "The parent task in a hierarchical structure"@en .
+
+
+# ============================================================================
+# DATATYPE PROPERTIES - ATTRIBUTES
+# ============================================================================
+
+## Identification Properties
+
+eo:identifier a owl:DatatypeProperty ;
+    rdfs:label "identifier"@en ;
+    rdfs:domain eo:Entity ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Unique identifier for an entity"@en .
+
+eo:name a owl:DatatypeProperty ;
+    rdfs:label "name"@en ;
+    rdfs:domain eo:Entity ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Human-readable name"@en .
+
+eo:description a owl:DatatypeProperty ;
+    rdfs:label "description"@en ;
+    rdfs:domain eo:Entity ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Textual description"@en .
+
+## Temporal Properties
+
+spo:startDate a owl:DatatypeProperty ;
+    rdfs:label "start date"@en ;
+    rdfs:domain eo:Perdurant ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The date when something starts"@en .
+
+spo:endDate a owl:DatatypeProperty ;
+    rdfs:label "end date"@en ;
+    rdfs:domain eo:Perdurant ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The date when something ends"@en .
+
+spo:duration a owl:DatatypeProperty ;
+    rdfs:label "duration"@en ;
+    rdfs:domain eo:Perdurant ;
+    rdfs:range xsd:duration ;
+    rdfs:comment "The duration of an event or process"@en .
+
+pm:startDate a owl:DatatypeProperty ;
+    rdfs:label "start date (PM)"@en ;
+    rdfs:subPropertyOf spo:startDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "Activity start date"@en .
+
+pm:finishDate a owl:DatatypeProperty ;
+    rdfs:label "finish date"@en ;
+    rdfs:subPropertyOf spo:endDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "Activity finish date"@en .
+
+pm:hasPlannedStart a owl:DatatypeProperty ;
+    rdfs:label "planned start date"@en ;
+    rdfs:subPropertyOf pm:startDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The planned start date of an activity"@en .
+
+pm:hasPlannedEnd a owl:DatatypeProperty ;
+    rdfs:label "planned end date"@en ;
+    rdfs:subPropertyOf pm:finishDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The planned end date of an activity"@en .
+
+pm:hasActualStart a owl:DatatypeProperty ;
+    rdfs:label "actual start date"@en ;
+    rdfs:subPropertyOf pm:startDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The actual start date of an activity"@en .
+
+pm:hasActualEnd a owl:DatatypeProperty ;
+    rdfs:label "actual end date"@en ;
+    rdfs:subPropertyOf pm:finishDate ;
+    rdfs:domain pm:Activity ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The actual end date of an activity"@en .
+
+pm:lagDuration a owl:DatatypeProperty ;
+    rdfs:label "lag duration"@en ;
+    rdfs:subPropertyOf spo:duration ;
+    rdfs:domain pm:Dependency ;
+    rdfs:range xsd:duration ;
+    rdfs:comment "Time lag in a dependency"@en .
+
+## Scrum-Specific Properties
+
+sro:priorityIndex a owl:DatatypeProperty ;
+    rdfs:label "priority index"@en ;
+    rdfs:domain sro:Priority ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The integer index associated with a priority"@en .
+
+sro:effort a owl:DatatypeProperty ;
+    rdfs:label "effort"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Estimated effort to implement a user story (story points)"@en .
+
+sro:storyPoints a owl:DatatypeProperty ;
+    rdfs:label "story points"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Relative sizing of user story complexity"@en .
+
+sro:hasBusinessValue a owl:DatatypeProperty ;
+    rdfs:label "business value"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The business value assigned to a user story or epic"@en .
+
+sro:hasSprintGoal a owl:DatatypeProperty ;
+    rdfs:label "sprint goal"@en ;
+    rdfs:domain sro:Sprint ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The goal or objective of a sprint"@en .
+
+sro:timeEstimate a owl:DatatypeProperty ;
+    rdfs:label "time estimate"@en ;
+    rdfs:subPropertyOf spo:duration ;
+    rdfs:domain sro:IntendedScrumDevelopmentTask ;
+    rdfs:range xsd:duration ;
+    rdfs:comment "Estimated time to complete a task"@en .
+
+sro:timeSpent a owl:DatatypeProperty ;
+    rdfs:label "time spent"@en ;
+    rdfs:subPropertyOf spo:duration ;
+    rdfs:domain sro:PerformedScrumDevelopmentTask ;
+    rdfs:range xsd:duration ;
+    rdfs:comment "Actual time spent on a task"@en .
+
+## Person Properties
+
+eo:email a owl:DatatypeProperty ;
+    rdfs:label "email"@en ;
+    rdfs:domain eo:Person ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Email address"@en .
+
+eo:hasRole a owl:DatatypeProperty ;
+    rdfs:label "has role"@en ;
+    rdfs:domain eo:TeamMember ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Role designation"@en .
+
+## Status Properties
+
+sro:stateIndex a owl:DatatypeProperty ;
+    rdfs:label "state index"@en ;
+    rdfs:domain sro:State ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The integer index associated with a state"@en .
+
+sro:isAccepted a owl:DatatypeProperty ;
+    rdfs:label "is accepted"@en ;
+    rdfs:domain sro:Deliverable ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "Whether a deliverable meets acceptance criteria"@en .
+
+sro:isDone a owl:DatatypeProperty ;
+    rdfs:label "is done"@en ;
+    rdfs:domain sro:UserStory ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "Whether a user story is completed and accepted"@en .
+
+# ============================================================================
+# AXIOMS AND CONSTRAINTS FOR REASONING
+# ============================================================================
+
+
+## Critical Path Method Properties
+
+pm:duration a owl:DatatypeProperty ;
+    rdfs:label "duration"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "The duration of a task in working days"@en .
+
+pm:plannedDuration a owl:DatatypeProperty ;
+    rdfs:label "planned duration"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "The planned duration of a task in working days"@en .
+
+pm:earliestStart a owl:DatatypeProperty ;
+    rdfs:label "earliest start"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Earliest start time in days from project start (forward pass)"@en ;
+    skos:definition "The earliest time a task can start without violating dependencies"@en .
+
+pm:earliestFinish a owl:DatatypeProperty ;
+    rdfs:label "earliest finish"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Earliest finish time in days from project start"@en .
+
+pm:latestStart a owl:DatatypeProperty ;
+    rdfs:label "latest start"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Latest start time without delaying project (backward pass)"@en ;
+    skos:definition "The latest time a task can start without delaying the project"@en .
+
+pm:latestFinish a owl:DatatypeProperty ;
+    rdfs:label "latest finish"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Latest finish time without delaying project"@en .
+
+pm:totalFloat a owl:DatatypeProperty ;
+    rdfs:label "total float"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Total slack time available (LS - ES or LF - EF)"@en ;
+    skos:definition "The amount of time a task can be delayed without delaying the project"@en .
+
+pm:freeFloat a owl:DatatypeProperty ;
+    rdfs:label "free float"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Slack time without delaying any successor task"@en .
+
+pm:isCritical a owl:DatatypeProperty ;
+    rdfs:label "is critical"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "Whether the task is on the critical path (zero total float)"@en .
+
+pm:lag a owl:DatatypeProperty ;
+    rdfs:label "lag"@en ;
+    rdfs:domain pm:Dependency ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Time delay between predecessor and successor in days"@en .
+
+pm:lead a owl:DatatypeProperty ;
+    rdfs:label "lead"@en ;
+    rdfs:domain pm:Dependency ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Negative lag (overlap) between predecessor and successor"@en .
+
+pm:weight a owl:DatatypeProperty ;
+    rdfs:label "weight"@en ;
+    rdfs:domain pm:Dependency ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Calculated weight for longest path algorithm based on dependency type"@en ;
+    skos:definition "Weight used in DAG longest path calculation (Neo4j GDS style)"@en .
+
+pm:projectDuration a owl:DatatypeProperty ;
+    rdfs:label "project duration"@en ;
+    rdfs:domain pm:CriticalPathAnalysis ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Total project duration determined by the critical path"@en .
+
+pm:pathLength a owl:DatatypeProperty ;
+    rdfs:label "path length"@en ;
+    rdfs:domain pm:CriticalPath ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "Total length of the critical path in days"@en .
+
+pm:calculationMethod a owl:DatatypeProperty ;
+    rdfs:label "calculation method"@en ;
+    rdfs:domain pm:CriticalPathAnalysis ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The algorithm used for CPM calculation"@en .
+
+pm:analysisDate a owl:DatatypeProperty ;
+    rdfs:label "analysis date"@en ;
+    rdfs:domain pm:CriticalPathAnalysis ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "When the critical path analysis was performed"@en .
+
+pm:type a owl:DatatypeProperty ;
+    rdfs:label "type"@en ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The type of task (task, story, epic, milestone)"@en .
+
+pm:name a owl:DatatypeProperty ;
+    rdfs:label "name"@en ;
+    rdfs:subPropertyOf eo:name ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The name of the task"@en .
+
+pm:endDate a owl:DatatypeProperty ;
+    rdfs:label "end date"@en ;
+    rdfs:subPropertyOf spo:endDate ;
+    rdfs:domain pm:Task ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The end/finish date of the task"@en .
+
+## Disjoint Classes
+[] a owl:AllDisjointClasses ;
+    owl:members (sro:ProductOwner sro:ScrumMaster sro:Developer) .
+
+[] a owl:AllDisjointClasses ;
+    owl:members (sro:PlanningMeeting sro:DailyStandupMeeting sro:ReviewMeeting sro:RetrospectiveMeeting) .
+
+## Cardinality Constraints
+
+sro:ScrumProject rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty sro:hasProductBacklog ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onClass sro:ProductBacklog
+] .
+
+sro:Sprint rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty sro:hasSprintBacklog ;
+    owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onClass sro:SprintBacklog
+] .
+
+sro:ScrumTeam rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty eo:hasTeamMember ;
+    owl:minQualifiedCardinality "3"^^xsd:nonNegativeInteger ;
+    owl:onClass sro:ScrumTeamMember ;
+    rdfs:comment "A Scrum team must have at least 3 members (PO, SM, Dev)"@en
+] .
+
+## Property Chains for Transitive Reasoning
+
+# If A is part of B, and B is part of C, then A is part of C
+spo:partOf a owl:TransitiveProperty .
+
+# If Epic E is decomposed into Story S, and S materializes Deliverable D, 
+# then D materializes E
+[] a owl:Axiom ;
+    owl:annotatedSource sro:materializes ;
+    owl:annotatedProperty owl:propertyChainAxiom ;
+    owl:annotatedTarget (sro:materializes [ owl:inverseOf sro:decomposedInto ]) .
+
+## Inverse Properties
+spo:composedOf owl:inverseOf spo:partOf .
+spo:hasStakeholder owl:inverseOf spo:interestedIn .
+pm:precedes owl:inverseOf pm:dependsOn .
+pm:predecessor owl:inverseOf pm:successor .
+
+## Functional Properties
+sro:hasProductBacklog a owl:FunctionalProperty .
+sro:hasSprintBacklog a owl:FunctionalProperty .
+
+# ============================================================================
+# REASONING RULES - CLASS INFERENCE
+# ============================================================================
+
+## Rule: Accepted Deliverable Classification
+# If a deliverable D has been marked as accepted, classify it as sro:AcceptedDeliverable
+
+sro:AcceptedDeliverable owl:equivalentClass [
+    a owl:Class ;
+    owl:intersectionOf (
+        sro:Deliverable
+        [
+            a owl:Restriction ;
+            owl:onProperty sro:isAccepted ;
+            owl:hasValue true
+        ]
+    )
+] .
+
+## Rule: Critical Task Classification  
+# A task is critical if it has zero total float
+pm:CriticalTask owl:equivalentClass [
+    a owl:Class ;
+    owl:intersectionOf (
+        pm:Task
+        [
+            a owl:Restriction ;
+            owl:onProperty pm:totalFloat ;
+            owl:hasValue "0"^^xsd:decimal
+        ]
+    )
+] .
+
+## Rule: Critical Dependency Classification
+# A dependency is critical if both source and target are critical tasks
+pm:CriticalDependency owl:equivalentClass [
+    a owl:Class ;
+    owl:intersectionOf (
+        pm:Dependency
+        [
+            a owl:Restriction ;
+            owl:onProperty pm:source ;
+            owl:someValuesFrom pm:CriticalTask
+        ]
+        [
+            a owl:Restriction ;
+            owl:onProperty pm:target ;
+            owl:someValuesFrom pm:CriticalTask
+        ]
+    )
+] .
+
+## Rule: Milestone Classification
+# A milestone is a task with zero duration
+pm:Milestone owl:equivalentClass [
+    a owl:Class ;
+    owl:intersectionOf (
+        pm:Task
+        [
+            a owl:Restriction ;
+            owl:onProperty pm:duration ;
+            owl:hasValue "0"^^xsd:decimal
+        ]
+    )
+] .
+
+## Rule: Successfully Performed Task Classification
+# A task is successful if all its deliverables are accepted
+
+sro:SuccessfullyPerformedScrumDevelopmentTask owl:equivalentClass [
+    a owl:Class ;
+    owl:intersectionOf (
+        sro:PerformedScrumDevelopmentTask
+        [
+            a owl:Restriction ;
+            owl:onProperty sro:produces ;
+            owl:allValuesFrom sro:AcceptedDeliverable
+        ]
+    )
+] .
+
+## Rule: Complex Project Classification
+# A Scrum project is complex if it has sub-projects
+
+sro:ScrumComplexProject owl:equivalentClass [
+    a owl:Class ;
+    owl:intersectionOf (
+        sro:ScrumProject
+        [
+            a owl:Restriction ;
+            owl:onProperty sro:hasSubProject ;
+            owl:minCardinality "1"^^xsd:nonNegativeInteger
+        ]
+    )
+] .
+
+## Rule: Done User Story
+# A user story is done if it has at least one accepted deliverable that materializes it
+
+[] a owl:Class ;
+   rdfs:subClassOf sro:UserStory ;
+   owl:equivalentClass [
+       a owl:Restriction ;
+       owl:onProperty [ owl:inverseOf sro:materializes ] ;
+       owl:someValuesFrom sro:AcceptedDeliverable
+   ] ;
+   rdfs:subClassOf [
+       a owl:Restriction ;
+       owl:onProperty sro:isDone ;
+       owl:hasValue true
+   ] .
+
+# ============================================================================
+# PROPERTY CHARACTERISTICS FOR REASONING
+# ============================================================================
+
+## Transitive Properties
+spo:partOf a owl:TransitiveProperty .
+pm:hasParent a owl:TransitiveProperty .
+spo:dependsOn a owl:TransitiveProperty .
+sro:decomposedInto a owl:TransitiveProperty .
+
+## Symmetric Properties
+# (none defined - asymmetric relationships dominate in this domain)
+
+## Irreflexive Properties
+spo:dependsOn a owl:IrreflexiveProperty .
+pm:precedes a owl:IrreflexiveProperty .
+sro:decomposedInto a owl:IrreflexiveProperty .
+
+## Asymmetric Properties
+pm:hasParent a owl:AsymmetricProperty .
+spo:dependsOn a owl:AsymmetricProperty .
+
+# ============================================================================
+# DOCUMENTATION AND EXAMPLES
+# ============================================================================
+
+# Example instantiation (commented out - for documentation only):
+# 
+# ex:Project1 a sro:ScrumAtomicProject ;
+#     eo:name "Mobile App Development" ;
+#     sro:hasProductBacklog ex:PB1 ;
+#     spo:startDate "2025-01-01"^^xsd:date .
+#
+# ex:PB1 a sro:ProductBacklog ;
+#     sro:contains ex:US1, ex:US2 .
+#
+# ex:US1 a sro:AtomicUserStory ;
+#     eo:name "User Login Feature" ;
+#     sro:priority 10 ;
+#     sro:effort 5 ;
+#     sro:hasAcceptanceCriterion ex:AC1 .
+#
+# ex:AC1 a sro:FunctionalAcceptanceCriterion ;
+#     eo:description "User can log in with email and password" .
+#
+# ex:Sprint1 a sro:Sprint ;
+#     spo:startDate "2025-01-15"^^xsd:date ;
+#     spo:endDate "2025-01-29"^^xsd:date ;
+#     sro:hasSprintBacklog ex:SB1 .
+#
+# ex:SB1 a sro:SprintBacklog ;
+#     sro:selectedFor ex:US1 .
+#
+# ex:Task1 a sro:PerformedScrumDevelopmentTask ;
+#     eo:name "Implement login API" ;
+#     sro:produces ex:Deliverable1 .
+#
+# ex:Deliverable1 a sro:AcceptedDeliverable ;
+#     sro:materializes ex:US1 ;
+#     sro:isAccepted true .

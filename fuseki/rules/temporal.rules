@@ -1,0 +1,182 @@
+
+@prefix time: <http://www.w3.org/2006/time#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+#############################################
+# Temporal Inference Inference Rules
+#############################################
+
+
+#################################################################
+# INSTANT RELATIONS
+#################################################################
+
+# Instant before (dateTimeStamp)
+[InstantBeforeStamp:
+  (?t1 time:inXSDDateTimeStamp ?dt1)
+  (?t2 time:inXSDDateTimeStamp ?dt2)
+  greaterThan(?dt2, ?dt1)
+  ->
+  (?t1 time:before ?t2)
+]
+
+# Instant before (dateTime)
+[InstantBeforeDateTime:
+  (?t1 time:inXSDDateTime ?dt1)
+  (?t2 time:inXSDDateTime ?dt2)
+  greaterThan(?dt2, ?dt1)
+  ->
+  (?t1 time:before ?t2)
+]
+
+# Cross-type instant before (stamp → datetime)
+[InstantBeforeStampToDateTime:
+  (?t1 time:inXSDDateTimeStamp ?dt1)
+  (?t2 time:inXSDDateTime ?dt2)
+  greaterThan(?dt2, ?dt1)
+  ->
+  (?t1 time:before ?t2)
+]
+
+# Cross-type instant before (datetime → stamp)
+[InstantBeforeDateTimeToStamp:
+  (?t1 time:inXSDDateTime ?dt1)
+  (?t2 time:inXSDDateTimeStamp ?dt2)
+  greaterThan(?dt2, ?dt1)
+  ->
+  (?t1 time:before ?t2)
+]
+
+#################################################################
+# INTERVAL RELATIONS (value-based)
+#################################################################
+
+# BEFORE: end1 < start2
+[IntervalBefore:
+  (?i1 time:hasEnd ?e1)
+  (?i2 time:hasBeginning ?b2)
+  (?e1 time:inXSDDateTimeStamp ?dtE1)
+  (?b2 time:inXSDDateTimeStamp ?dtB2)
+  greaterThan(?dtB2, ?dtE1)
+  ->
+  (?i1 time:before ?i2)
+]
+
+# MEETS: end1 == start2
+[IntervalMeetsByValue:
+  (?i1 time:hasEnd ?e1)
+  (?i2 time:hasBeginning ?b2)
+  (?e1 time:inXSDDateTimeStamp ?dtE1)
+  (?b2 time:inXSDDateTimeStamp ?dtB2)
+  equal(?dtE1, ?dtB2)
+  ->
+  (?i1 time:intervalMeets ?i2)
+]
+
+# STARTS: start1 == start2  AND  end1 < end2
+[IntervalStartsByValue:
+  (?i1 time:hasBeginning ?b1)
+  (?i2 time:hasBeginning ?b2)
+  (?i1 time:hasEnd ?e1)
+  (?i2 time:hasEnd ?e2)
+  (?b1 time:inXSDDateTimeStamp ?dtB1)
+  (?b2 time:inXSDDateTimeStamp ?dtB2)
+  equal(?dtB1, ?dtB2)
+  (?e1 time:inXSDDateTimeStamp ?dtE1)
+  (?e2 time:inXSDDateTimeStamp ?dtE2)
+  greaterThan(?dtE2, ?dtE1)
+  ->
+  (?i1 time:intervalStarts ?i2)
+]
+
+# FINISHES: end1 == end2  AND  start1 > start2
+[IntervalFinishesByValue:
+  (?i1 time:hasEnd ?e1)
+  (?i2 time:hasEnd ?e2)
+  (?e1 time:inXSDDateTimeStamp ?dtE1)
+  (?e2 time:inXSDDateTimeStamp ?dtE2)
+  equal(?dtE1, ?dtE2)
+  (?i1 time:hasBeginning ?b1)
+  (?i2 time:hasBeginning ?b2)
+  (?b1 time:inXSDDateTimeStamp ?dtB1)
+  (?b2 time:inXSDDateTimeStamp ?dtB2)
+  greaterThan(?dtB1, ?dtB2)
+  ->
+  (?i1 time:intervalFinishes ?i2)
+]
+
+# DURING: start1 > start2  AND  end1 < end2
+[IntervalDuringByValue:
+  (?i1 time:hasBeginning ?b1)
+  (?i1 time:hasEnd ?e1)
+  (?i2 time:hasBeginning ?b2)
+  (?i2 time:hasEnd ?e2)
+  (?b1 time:inXSDDateTimeStamp ?dtB1)
+  (?e1 time:inXSDDateTimeStamp ?dtE1)
+  (?b2 time:inXSDDateTimeStamp ?dtB2)
+  (?e2 time:inXSDDateTimeStamp ?dtE2)
+  greaterThan(?dtB1, ?dtB2)
+  greaterThan(?dtE2, ?dtE1)
+  ->
+  (?i1 time:intervalDuring ?i2)
+]
+
+# CONTAINS: start1 < start2  AND  end1 > end2
+[IntervalContainsByValue:
+  (?i1 time:hasBeginning ?b1)
+  (?i1 time:hasEnd ?e1)
+  (?i2 time:hasBeginning ?b2)
+  (?i2 time:hasEnd ?e2)
+  (?b1 time:inXSDDateTimeStamp ?dtB1)
+  (?e1 time:inXSDDateTimeStamp ?dtE1)
+  (?b2 time:inXSDDateTimeStamp ?dtB2)
+  (?e2 time:inXSDDateTimeStamp ?dtE2)
+  greaterThan(?dtB2, ?dtB1)
+  greaterThan(?dtE1, ?dtE2)
+  ->
+  (?i1 time:intervalContains ?i2)
+]
+
+# OVERLAPS: start1 < start2  AND  end1 > start2  AND  end1 < end2
+[IntervalOverlapsByValue:
+  (?i1 time:hasBeginning ?b1)
+  (?i1 time:hasEnd ?e1)
+  (?i2 time:hasBeginning ?b2)
+  (?i2 time:hasEnd ?e2)
+  (?b1 time:inXSDDateTimeStamp ?dtB1)
+  (?e1 time:inXSDDateTimeStamp ?dtE1)
+  (?b2 time:inXSDDateTimeStamp ?dtB2)
+  (?e2 time:inXSDDateTimeStamp ?dtE2)
+  greaterThan(?dtB2, ?dtB1)
+  greaterThan(?dtE1, ?dtB2)
+  greaterThan(?dtE2, ?dtE1)
+  ->
+  (?i1 time:intervalOverlaps ?i2)
+]
+
+# EQUALS: start1 == start2  AND  end1 == end2
+[IntervalEqualsByValue:
+  (?i1 time:hasBeginning ?b1)
+  (?i2 time:hasBeginning ?b2)
+  (?i1 time:hasEnd ?e1)
+  (?i2 time:hasEnd ?e2)
+  (?b1 time:inXSDDateTimeStamp ?dtB1)
+  (?b2 time:inXSDDateTimeStamp ?dtB2)
+  equal(?dtB1, ?dtB2)
+  (?e1 time:inXSDDateTimeStamp ?dtE1)
+  (?e2 time:inXSDDateTimeStamp ?dtE2)
+  equal(?dtE1, ?dtE2)
+  ->
+  (?i1 time:intervalEquals ?i2)
+]
+
+# #################################################################
+# # OPTIONAL OWL INVERSES (for ontology declaration)
+# #################################################################
+
+# time:after                owl:inverseOf time:before .
+# time:intervalMetBy    owl:inverseOf time:intervalMeets .
+# time:intervalStartedBy owl:inverseOf time:intervalStarts .
+# time:intervalFinishedBy owl:inverseOf time:intervalFinishes .
+# time:intervalContains  owl:inverseOf time:intervalDuring .
+# time:intervalOverlappedBy owl:inverseOf time:intervalOverlaps .

@@ -1,166 +1,110 @@
 /**
- * Global Application State Store
- * Using Zustand for simple, lightweight state management
+ * Global UI State Store
+ * Using Zustand ONLY for client-side UI state
+ * Server data (tasks, projects, etc.) is managed by React Query
  */
 
 import { create } from 'zustand';
-import { Task, Project, Insight, UserStory, Epic, Sprint, TeamMember, Dependency } from '@/lib/api/types';
+import { persist } from 'zustand/middleware';
 
-interface AppState {
-  // Current project
-  currentProject: Project | null;
-  setCurrentProject: (project: Project | null) => void;
+interface UIState {
+  // Current project (just the slug for routing)
+  currentProjectSlug: string;
+  setCurrentProjectSlug: (slug: string) => void;
 
-  // Epics
-  epics: Epic[];
-  setEpics: (epics: Epic[]) => void;
-  addEpic: (epic: Epic) => void;
-  updateEpic: (id: string, updates: Partial<Epic>) => void;
-  deleteEpic: (id: string) => void;
-
-  // User Stories
-  stories: UserStory[];
-  setStories: (stories: UserStory[]) => void;
-  addStory: (story: UserStory) => void;
-  updateStory: (id: string, updates: Partial<UserStory>) => void;
-  deleteStory: (id: string) => void;
-
-  // Tasks
-  tasks: Task[];
-  setTasks: (tasks: Task[]) => void;
-  addTask: (task: Task) => void;
-  updateTask: (id: string, updates: Partial<Task>) => void;
-  deleteTask: (id: string) => void;
-
-  // Sprints
-  sprints: Sprint[];
-  setSprints: (sprints: Sprint[]) => void;
-  addSprint: (sprint: Sprint) => void;
-  updateSprint: (id: string, updates: Partial<Sprint>) => void;
-  deleteSprint: (id: string) => void;
-
-  // Team Members
-  teamMembers: TeamMember[];
-  setTeamMembers: (members: TeamMember[]) => void;
-
-  // Dependencies
-  dependencies: Dependency[];
-  setDependencies: (deps: Dependency[]) => void;
-  addDependency: (dep: Dependency) => void;
-  deleteDependency: (id: string) => void;
-
-  // Insights
-  insights: Insight[];
-  setInsights: (insights: Insight[]) => void;
-
-  // UI state
+  // Sidebar state
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
+
+  // Command palette
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
+
+  // Chat panel
   chatPanelOpen: boolean;
   setChatPanelOpen: (open: boolean) => void;
 
-  // Loading states
-  isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
+  // View preferences
+  kanbanViewMode: 'compact' | 'comfortable' | 'spacious';
+  setKanbanViewMode: (mode: 'compact' | 'comfortable' | 'spacious') => void;
+
+  ganttZoomLevel: 'day' | 'week' | 'month';
+  setGanttZoomLevel: (level: 'day' | 'week' | 'month') => void;
+
+  // Filters (UI state only - actual filtering happens in queries)
+  activeFilters: {
+    status?: string[];
+    priority?: string[];
+    assignee?: string[];
+    sprint?: string;
+    epic?: string;
+  };
+  setActiveFilters: (filters: UIState['activeFilters']) => void;
+  clearFilters: () => void;
+
+  // Selected items (for bulk operations)
+  selectedTaskIds: string[];
+  toggleTaskSelection: (id: string) => void;
+  clearTaskSelection: () => void;
+  selectAllTasks: (ids: string[]) => void;
 }
 
-export const useAppStore = create<AppState>()((set) => ({
-  // Initial state
-  currentProject: null,
-  epics: [],
-  stories: [],
-  tasks: [],
-  sprints: [],
-  teamMembers: [],
-  dependencies: [],
-  insights: [],
-  sidebarCollapsed: false,
-  commandPaletteOpen: false,
-  chatPanelOpen: false,
-  isLoading: false,
+export const useUIStore = create<UIState>()(
+  persist(
+    (set) => ({
+      // Initial state
+      currentProjectSlug: process.env.NEXT_PUBLIC_DEFAULT_PROJECT || 'demo-project',
+      sidebarCollapsed: false,
+      commandPaletteOpen: false,
+      chatPanelOpen: false,
+      kanbanViewMode: 'comfortable',
+      ganttZoomLevel: 'week',
+      activeFilters: {},
+      selectedTaskIds: [],
 
-  // Project Actions
-  setCurrentProject: (project) => set({ currentProject: project }),
+      // Project Actions
+      setCurrentProjectSlug: (slug) => set({ currentProjectSlug: slug }),
 
-  // Epic Actions
-  setEpics: (epics) => set({ epics }),
-  addEpic: (epic) => set((state) => ({ epics: [...state.epics, epic] })),
-  updateEpic: (id, updates) =>
-    set((state) => ({
-      epics: state.epics.map((epic) =>
-        epic.id === id ? { ...epic, ...updates } : epic
-      ),
-    })),
-  deleteEpic: (id) =>
-    set((state) => ({
-      epics: state.epics.filter((epic) => epic.id !== id),
-    })),
+      // Sidebar Actions
+      toggleSidebar: () =>
+        set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 
-  // User Story Actions
-  setStories: (stories) => set({ stories }),
-  addStory: (story) => set((state) => ({ stories: [...state.stories, story] })),
-  updateStory: (id, updates) =>
-    set((state) => ({
-      stories: state.stories.map((story) =>
-        story.id === id ? { ...story, ...updates } : story
-      ),
-    })),
-  deleteStory: (id) =>
-    set((state) => ({
-      stories: state.stories.filter((story) => story.id !== id),
-    })),
+      // Command Palette Actions
+      setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
 
-  // Task Actions
-  setTasks: (tasks) => set({ tasks }),
-  addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
-  updateTask: (id, updates) =>
-    set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task.id === id ? { ...task, ...updates } : task
-      ),
-    })),
-  deleteTask: (id) =>
-    set((state) => ({
-      tasks: state.tasks.filter((task) => task.id !== id),
-    })),
+      // Chat Panel Actions
+      setChatPanelOpen: (open) => set({ chatPanelOpen: open }),
 
-  // Sprint Actions
-  setSprints: (sprints) => set({ sprints }),
-  addSprint: (sprint) => set((state) => ({ sprints: [...state.sprints, sprint] })),
-  updateSprint: (id, updates) =>
-    set((state) => ({
-      sprints: state.sprints.map((sprint) =>
-        sprint.id === id ? { ...sprint, ...updates } : sprint
-      ),
-    })),
-  deleteSprint: (id) =>
-    set((state) => ({
-      sprints: state.sprints.filter((sprint) => sprint.id !== id),
-    })),
+      // View Preference Actions
+      setKanbanViewMode: (mode) => set({ kanbanViewMode: mode }),
+      setGanttZoomLevel: (level) => set({ ganttZoomLevel: level }),
 
-  // Team Member Actions
-  setTeamMembers: (teamMembers) => set({ teamMembers }),
+      // Filter Actions
+      setActiveFilters: (filters) => set({ activeFilters: filters }),
+      clearFilters: () => set({ activeFilters: {} }),
 
-  // Dependency Actions
-  setDependencies: (dependencies) => set({ dependencies }),
-  addDependency: (dep) => set((state) => ({ dependencies: [...state.dependencies, dep] })),
-  deleteDependency: (id) =>
-    set((state) => ({
-      dependencies: state.dependencies.filter((dep) => dep.id !== id),
-    })),
+      // Selection Actions
+      toggleTaskSelection: (id) =>
+        set((state) => ({
+          selectedTaskIds: state.selectedTaskIds.includes(id)
+            ? state.selectedTaskIds.filter((taskId) => taskId !== id)
+            : [...state.selectedTaskIds, id],
+        })),
+      clearTaskSelection: () => set({ selectedTaskIds: [] }),
+      selectAllTasks: (ids) => set({ selectedTaskIds: ids }),
+    }),
+    {
+      name: 'pm-ui-state', // localStorage key
+      partialize: (state) => ({
+        // Only persist UI preferences, not runtime state
+        currentProjectSlug: state.currentProjectSlug,
+        sidebarCollapsed: state.sidebarCollapsed,
+        kanbanViewMode: state.kanbanViewMode,
+        ganttZoomLevel: state.ganttZoomLevel,
+      }),
+    }
+  )
+);
 
-  // Insight Actions
-  setInsights: (insights) => set({ insights }),
-
-  // UI Actions
-  toggleSidebar: () =>
-    set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
-
-  setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
-
-  setChatPanelOpen: (open) => set({ chatPanelOpen: open }),
-
-  setIsLoading: (loading) => set({ isLoading: loading }),
-}));
+// Backwards compatibility alias (will remove after updating components)
+export const useAppStore = useUIStore;

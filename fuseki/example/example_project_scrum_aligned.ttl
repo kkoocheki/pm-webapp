@@ -1,0 +1,754 @@
+@prefix sro:    <https://www.knoid.io/ontologies/sro#> .
+@prefix pm:     <https://www.knoid.io/ontologies/pm#> .
+@prefix spo:    <https://www.knoid.io/ontologies/spo#> .
+@prefix eo:     <https://www.knoid.io/ontologies/eo#> .
+@prefix rsro:   <https://www.knoid.io/ontologies/rsro#> .
+@prefix ex:     <https://example.knoid.io/projects/> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+
+# ============================================================================
+# Enhanced Scrum Project Example - Fully Aligned with Scrum PM Ontology
+# ============================================================================
+# This version extends example_project_reworked.ttl with full Scrum semantics:
+# - ScrumProject with Product Backlog
+# - Multiple Sprints with Sprint Backlogs
+# - Proper role typing (ProductOwner, ScrumMaster, Developer, QAEngineer)
+# - Story states (ToDo, InProgress, Done)
+# - Sprint goals and acceptance criteria
+# - Deliverables and acceptance tracking
+# - Enhanced temporal properties (planned vs actual)
+
+# ============================================================================
+# 1. SCRUM PROJECT SETUP
+# ============================================================================
+
+ex:ProjectAlpha a sro:ScrumProject ;
+    rdfs:label "Alpha Platform Development"@en ;
+    rdfs:comment "Scrum project for developing the Alpha customer platform"@en ;
+    sro:hasProductBacklog ex:ProductBacklog1 ;
+    sro:hasSprint ex:Sprint1, ex:Sprint2, ex:Sprint3 ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-12-15"^^xsd:date ;
+    sro:hasTeamMember ex:U1, ex:U2, ex:U3, ex:U4, ex:U5 .
+
+# Product Backlog
+ex:ProductBacklog1 a sro:ProductBacklog ;
+    rdfs:label "Alpha Platform Product Backlog"@en ;
+    sro:contains ex:E1, ex:E2, ex:E3 .
+
+# ============================================================================
+# 2. TEAM MEMBERS WITH PROPER ROLE TYPING
+# ============================================================================
+
+# Product Owner
+ex:U1 a sro:ProductOwner ;
+    rdfs:label "Alice Chen"@en ;
+    sro:name "Alice Chen" ;
+    sro:email "alice.chen@example.org" ;
+    sro:participatesIn ex:ProjectAlpha .
+
+# Scrum Master
+ex:U2 a sro:ScrumMaster ;
+    rdfs:label "Ben Singh"@en ;
+    sro:name "Ben Singh" ;
+    sro:email "ben.singh@example.org" ;
+    sro:participatesIn ex:ProjectAlpha .
+
+# Developers
+ex:U3 a sro:Developer ;
+    rdfs:label "Cara Lopez"@en ;
+    sro:name "Cara Lopez" ;
+    sro:email "cara.lopez@example.org" ;
+    sro:participatesIn ex:ProjectAlpha .
+
+ex:U4 a sro:Developer ;
+    rdfs:label "Diego Patel"@en ;
+    sro:name "Diego Patel" ;
+    sro:email "diego.patel@example.org" ;
+    sro:participatesIn ex:ProjectAlpha .
+
+# QA Engineer (Development Team member)
+ex:U5 a sro:QAEngineer ;
+    rdfs:label "Evan Wu"@en ;
+    sro:name "Evan Wu" ;
+    sro:email "evan.wu@example.org" ;
+    sro:participatesIn ex:ProjectAlpha .
+
+# ============================================================================
+# 3. SPRINTS
+# ============================================================================
+
+# Sprint 1: User Onboarding Focus (2 weeks)
+ex:Sprint1 a sro:Sprint ;
+    rdfs:label "Sprint 1 - User Onboarding"@en ;
+    sro:sprintNumber 1 ;
+    sro:hasSprintGoal "Complete core user onboarding flow with signup and profile creation" ;
+    sro:hasSprintBacklog ex:SprintBacklog1 ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-12-15"^^xsd:date ;
+    pm:hasActualStart "2025-11-03"^^xsd:date ;
+    sro:sprintDuration "P14D"^^xsd:duration ;
+    sro:isPartOf ex:ProjectAlpha .
+
+ex:SprintBacklog1 a sro:SprintBacklog ;
+    rdfs:label "Sprint 1 Backlog"@en ;
+    sro:contains ex:S1, ex:S2, ex:S3 .
+
+# Sprint 2: Dashboard & Metrics (2 weeks)
+ex:Sprint2 a sro:Sprint ;
+    rdfs:label "Sprint 2 - Reporting Dashboard"@en ;
+    sro:sprintNumber 2 ;
+    sro:hasSprintGoal "Deliver functional reporting dashboard with data ingestion and visualization" ;
+    sro:hasSprintBacklog ex:SprintBacklog2 ;
+    pm:hasPlannedStart "2025-11-18"^^xsd:date ;
+    pm:hasPlannedEnd "2025-12-01"^^xsd:date ;
+    sro:sprintDuration "P14D"^^xsd:duration ;
+    sro:isPartOf ex:ProjectAlpha .
+
+ex:SprintBacklog2 a sro:SprintBacklog ;
+    rdfs:label "Sprint 2 Backlog"@en ;
+    sro:contains ex:S4, ex:S5, ex:S6 .
+
+# Sprint 3: Payments Integration (2 weeks)
+ex:Sprint3 a sro:Sprint ;
+    rdfs:label "Sprint 3 - Payments Integration"@en ;
+    sro:sprintNumber 3 ;
+    sro:hasSprintGoal "Implement secure payment processing with provider integration" ;
+    sro:hasSprintBacklog ex:SprintBacklog3 ;
+    pm:hasPlannedStart "2025-12-02"^^xsd:date ;
+    pm:hasPlannedEnd "2025-12-15"^^xsd:date ;
+    sro:sprintDuration "P14D"^^xsd:duration ;
+    sro:isPartOf ex:ProjectAlpha .
+
+ex:SprintBacklog3 a sro:SprintBacklog ;
+    rdfs:label "Sprint 3 Backlog"@en ;
+    sro:contains ex:S7, ex:S8, ex:S9 .
+
+# ============================================================================
+# 4. EPICS (Product Backlog Items)
+# ============================================================================
+
+ex:E1 a sro:Epic ;
+    rdfs:label "User Onboarding"@en ;
+    rdfs:comment "Complete user registration and onboarding experience"@en ;
+    sro:hasPriority sro:Urgent ;
+    sro:hasBusinessValue 85 ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-24"^^xsd:date ;
+    pm:assignedTo ex:U1 ;
+    sro:isInProductBacklog ex:ProductBacklog1 ;
+    sro:decomposedInto ex:S1, ex:S2, ex:S3 .
+
+ex:E2 a sro:Epic ;
+    rdfs:label "Reporting Dashboard"@en ;
+    rdfs:comment "Analytics and reporting capabilities for business insights"@en ;
+    sro:hasPriority sro:High ;
+    sro:hasBusinessValue 75 ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-12-01"^^xsd:date ;
+    pm:assignedTo ex:U1 ;
+    sro:isInProductBacklog ex:ProductBacklog1 ;
+    sro:decomposedInto ex:S4, ex:S5, ex:S6 .
+
+ex:E3 a sro:Epic ;
+    rdfs:label "Payments Integration"@en ;
+    rdfs:comment "Secure payment processing with third-party provider"@en ;
+    sro:hasPriority sro:Medium ;
+    sro:hasBusinessValue 90 ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-12-08"^^xsd:date ;
+    pm:assignedTo ex:U1 ;
+    sro:isInProductBacklog ex:ProductBacklog1 ;
+    sro:decomposedInto ex:S7, ex:S8, ex:S9 .
+
+# ============================================================================
+# 5. USER STORIES (Sprint Backlog Items)
+# ============================================================================
+
+# --- Sprint 1 Stories ---
+
+ex:S1 a sro:UserStory ;
+    rdfs:label "Signup with Email"@en ;
+    sro:storyText "As a new user, I want to sign up with my email address so that I can create an account"@en ;
+    sro:hasAcceptanceCriterion ex:AC_S1_1, ex:AC_S1_2, ex:AC_S1_3 ;
+    sro:storyPoints 5 ;
+    sro:hasPriority sro:Urgent ;
+    sro:hasState sro:Done ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-10"^^xsd:date ;
+    pm:hasActualStart "2025-11-03"^^xsd:date ;
+    pm:hasActualEnd "2025-11-09"^^xsd:date ;
+    pm:hasParent ex:E1 ;
+    pm:assignedTo ex:U2 ;
+    sro:isInSprint ex:Sprint1 ;
+    sro:isInSprintBacklog ex:SprintBacklog1 ;
+    sro:hasTask ex:T1, ex:T2, ex:T3 .
+
+ex:S2 a sro:UserStory ;
+    rdfs:label "Profile Creation"@en ;
+    sro:storyText "As a registered user, I want to create my profile with personal information so that I can personalize my account"@en ;
+    sro:hasAcceptanceCriterion ex:AC_S2_1, ex:AC_S2_2, ex:AC_S2_3 ;
+    sro:storyPoints 8 ;
+    sro:hasPriority sro:High ;
+    sro:hasState sro:Done ;
+    pm:hasPlannedStart "2025-11-08"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-15"^^xsd:date ;
+    pm:hasActualStart "2025-11-08"^^xsd:date ;
+    pm:hasActualEnd "2025-11-15"^^xsd:date ;
+    pm:hasParent ex:E1 ;
+    pm:assignedTo ex:U2 ;
+    sro:isInSprint ex:Sprint1 ;
+    sro:isInSprintBacklog ex:SprintBacklog1 ;
+    sro:hasTask ex:T4, ex:T5, ex:T6 .
+
+ex:S3 a sro:UserStory ;
+    rdfs:label "Welcome Tour"@en ;
+    sro:storyText "As a first-time user, I want to see a guided tour of key features so that I can learn how to use the platform"@en ;
+    sro:hasAcceptanceCriterion ex:AC_S3_1, ex:AC_S3_2, ex:AC_S3_3 ;
+    sro:storyPoints 3 ;
+    sro:hasPriority sro:Medium ;
+    sro:hasState sro:InProgress ;
+    pm:hasPlannedStart "2025-11-10"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-17"^^xsd:date ;
+    pm:hasActualStart "2025-11-10"^^xsd:date ;
+    pm:hasParent ex:E1 ;
+    pm:assignedTo ex:U2 ;
+    sro:isInSprint ex:Sprint1 ;
+    sro:isInSprintBacklog ex:SprintBacklog1 ;
+    sro:hasTask ex:T7, ex:T8 .
+
+# --- Sprint 2 Stories ---
+
+ex:S4 a sro:UserStory ;
+    rdfs:label "Metrics Ingestion"@en ;
+    sro:storyText "As a system administrator, I want automated data ingestion from external sources so that reports are always current"@en ;
+    sro:hasAcceptanceCriterion ex:AC_S4_1, ex:AC_S4_2, ex:AC_S4_3 ;
+    sro:storyPoints 13 ;
+    sro:hasPriority sro:NoPriority ;
+    sro:hasState sro:Done ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-13"^^xsd:date ;
+    pm:hasActualStart "2025-11-03"^^xsd:date ;
+    pm:hasActualEnd "2025-11-13"^^xsd:date ;
+    pm:hasParent ex:E2 ;
+    pm:assignedTo ex:U2 ;
+    sro:isInSprint ex:Sprint2 ;
+    sro:isInSprintBacklog ex:SprintBacklog2 ;
+    sro:hasTask ex:T9, ex:T10 .
+
+ex:S5 a sro:UserStory ;
+    rdfs:label "Chart Components"@en ;
+    sro:storyText "As a business user, I want interactive charts so that I can visualize trends and patterns"@en ;
+    sro:hasAcceptanceCriterion ex:AC_S5_1, ex:AC_S5_2, ex:AC_S5_3 ;
+    sro:storyPoints 8 ;
+    sro:hasPriority sro:High ;
+    sro:hasState sro:InReview ;
+    pm:hasPlannedStart "2025-11-08"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-18"^^xsd:date ;
+    pm:hasActualStart "2025-11-08"^^xsd:date ;
+    pm:hasActualEnd "2025-11-18"^^xsd:date ;
+    pm:hasParent ex:E2 ;
+    pm:assignedTo ex:U2 ;
+    sro:isInSprint ex:Sprint2 ;
+    sro:isInSprintBacklog ex:SprintBacklog2 ;
+    sro:hasTask ex:T11, ex:T12, ex:T13 .
+
+ex:S6 a sro:UserStory ;
+    rdfs:label "Export to CSV"@en ;
+    sro:storyText "As a business analyst, I want to export data to CSV so that I can perform offline analysis"@en ;
+    sro:hasAcceptanceCriterion ex:AC_S6_1, ex:AC_S6_2, ex:AC_S6_3 ;
+    sro:storyPoints 5 ;
+    sro:hasPriority sro:Medium ;
+    sro:hasState sro:ToDo ;
+    pm:hasPlannedStart "2025-11-15"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-21"^^xsd:date ;
+    pm:hasParent ex:E2 ;
+    pm:assignedTo ex:U2 ;
+    sro:isInSprint ex:Sprint2 ;
+    sro:isInSprintBacklog ex:SprintBacklog2 ;
+    sro:hasTask ex:T14, ex:T15 .
+
+# --- Sprint 3 Stories ---
+
+ex:S7 a sro:UserStory ;
+    rdfs:label "Payment Provider Selection"@en ;
+    sro:storyText "As a product owner, I want to evaluate payment providers so that we can select the best option"@en ;
+    sro:hasAcceptanceCriterion ex:AC_S7_1, ex:AC_S7_2, ex:AC_S7_3 ;
+    sro:storyPoints 5 ;
+    sro:hasPriority sro:Low ;
+    sro:hasState sro:Done ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-10"^^xsd:date ;
+    pm:hasActualStart "2025-11-03"^^xsd:date ;
+    pm:hasActualEnd "2025-11-10"^^xsd:date ;
+    pm:hasParent ex:E3 ;
+    pm:assignedTo ex:U2 ;
+    sro:isInSprint ex:Sprint3 ;
+    sro:isInSprintBacklog ex:SprintBacklog3 ;
+    sro:hasTask ex:T16, ex:T17 .
+
+ex:S8 a sro:UserStory ;
+    rdfs:label "Checkout Flow"@en ;
+    sro:storyText "As a customer, I want a seamless checkout experience so that I can complete purchases easily"@en ;
+    sro:hasAcceptanceCriterion ex:AC_S8_1, ex:AC_S8_2, ex:AC_S8_3 ;
+    sro:storyPoints 13 ;
+    sro:hasPriority sro:High ;
+    sro:hasState sro:InProgress ;
+    pm:hasPlannedStart "2025-11-10"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-23"^^xsd:date ;
+    pm:hasActualStart "2025-11-10"^^xsd:date ;
+    pm:hasParent ex:E3 ;
+    pm:assignedTo ex:U2 ;
+    sro:isInSprint ex:Sprint3 ;
+    sro:isInSprintBacklog ex:SprintBacklog3 ;
+    sro:hasTask ex:T18, ex:T19, ex:T20 .
+
+ex:S9 a sro:UserStory ;
+    rdfs:label "Refunds and Webhooks"@en ;
+    sro:storyText "As a customer service agent, I want to process refunds so that we can handle returns"@en ;
+    sro:hasAcceptanceCriterion ex:AC_S9_1, ex:AC_S9_2, ex:AC_S9_3 ;
+    sro:storyPoints 8 ;
+    sro:hasPriority sro:Medium ;
+    sro:hasState sro:ToDo ;
+    pm:hasPlannedStart "2025-11-21"^^xsd:date ;
+    pm:hasPlannedEnd "2025-12-08"^^xsd:date ;
+    pm:hasParent ex:E3 ;
+    pm:assignedTo ex:U2 ;
+    sro:isInSprint ex:Sprint3 ;
+    sro:isInSprintBacklog ex:SprintBacklog3 ;
+    sro:hasTask ex:T21, ex:T22, ex:T23 .
+
+# ============================================================================
+# 5.1 ACCEPTANCE CRITERIA
+# ============================================================================
+
+ex:AC_S1_1 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Email validation is performed"@en .
+ex:AC_S1_2 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Duplicate email detection works"@en .
+ex:AC_S1_3 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Confirmation email is sent"@en .
+
+ex:AC_S2_1 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Profile form has required fields"@en .
+ex:AC_S2_2 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Data is persisted to database"@en .
+ex:AC_S2_3 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Profile can be edited later"@en .
+
+ex:AC_S3_1 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Tour shows 5 key screens"@en .
+ex:AC_S3_2 a sro:FunctionalAcceptanceCriterion ; rdfs:label "User can skip or dismiss tour"@en .
+ex:AC_S3_3 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Tour doesn't repeat after completion"@en .
+
+ex:AC_S4_1 a sro:FunctionalAcceptanceCriterion ; rdfs:label "ETL pipeline runs on schedule"@en .
+ex:AC_S4_2 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Error handling logs failures"@en .
+ex:AC_S4_3 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Data validation prevents corrupt imports"@en .
+
+ex:AC_S5_1 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Line and bar charts are available"@en .
+ex:AC_S5_2 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Charts are responsive"@en .
+ex:AC_S5_3 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Charts support theming"@en .
+
+ex:AC_S6_1 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Export button is accessible"@en .
+ex:AC_S6_2 a sro:FunctionalAcceptanceCriterion ; rdfs:label "CSV format is correct"@en .
+ex:AC_S6_3 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Large datasets are handled efficiently"@en .
+
+ex:AC_S7_1 a sro:FunctionalAcceptanceCriterion ; rdfs:label "3 providers are reviewed"@en .
+ex:AC_S7_2 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Security assessment is completed"@en .
+ex:AC_S7_3 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Final recommendation is documented"@en .
+
+ex:AC_S8_1 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Payment UI is intuitive"@en .
+ex:AC_S8_2 a sro:FunctionalAcceptanceCriterion ; rdfs:label "3D Secure authentication works"@en .
+ex:AC_S8_3 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Payment confirmation is displayed"@en .
+
+ex:AC_S9_1 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Refund API is functional"@en .
+ex:AC_S9_2 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Webhook handlers are reliable"@en .
+ex:AC_S9_3 a sro:FunctionalAcceptanceCriterion ; rdfs:label "Events are logged properly"@en .
+
+# ============================================================================
+# 6. TASKS (Detailed Work Items)
+# ============================================================================
+
+# --- Story S1 Tasks (Signup with Email) ---
+
+ex:T1 a pm:Task ;
+    rdfs:label "Design signup API"@en ;
+    pm:taskDescription "Create API specification for user registration endpoint" ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-06"^^xsd:date ;
+    pm:hasActualStart "2025-11-03"^^xsd:date ;
+    pm:hasActualEnd "2025-11-06"^^xsd:date ;
+    pm:hasParent ex:S1 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P4D"^^xsd:duration ;
+    pm:actualEffort "P4D"^^xsd:duration ;
+    sro:hasState sro:Done .
+
+ex:T2 a pm:Task ;
+    rdfs:label "Implement signup API"@en ;
+    pm:taskDescription "Build backend registration logic with email validation" ;
+    pm:hasPlannedStart "2025-11-07"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-10"^^xsd:date ;
+    pm:hasActualStart "2025-11-07"^^xsd:date ;
+    pm:hasActualEnd "2025-11-09"^^xsd:date ;
+    pm:hasParent ex:S1 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P4D"^^xsd:duration ;
+    pm:actualEffort "P3D"^^xsd:duration ;
+    sro:hasState sro:InProgress .
+
+ex:T3 a pm:Task ;
+    rdfs:label "QA signup API"@en ;
+    pm:taskDescription "Test registration flow and edge cases" ;
+    pm:hasPlannedStart "2025-11-10"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-12"^^xsd:date ;
+    pm:hasActualStart "2025-11-09"^^xsd:date ;
+    pm:hasActualEnd "2025-11-10"^^xsd:date ;
+    pm:hasParent ex:S1 ;
+    pm:assignedTo ex:U5 ;
+    pm:estimatedEffort "P3D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+# --- Story S2 Tasks (Profile Creation) ---
+
+ex:T4 a pm:Task ;
+    rdfs:label "Profile DB schema"@en ;
+    pm:taskDescription "Design and implement user profile database schema" ;
+    pm:hasPlannedStart "2025-11-07"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-11"^^xsd:date ;
+    pm:hasActualStart "2025-11-08"^^xsd:date ;
+    pm:hasActualEnd "2025-11-11"^^xsd:date ;
+    pm:hasParent ex:S2 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P5D"^^xsd:duration ;
+    pm:actualEffort "P4D"^^xsd:duration ;
+    sro:hasState sro:Done .
+
+ex:T5 a pm:Task ;
+    rdfs:label "Profile UI"@en ;
+    pm:taskDescription "Build profile creation and editing interface" ;
+    pm:hasPlannedStart "2025-11-12"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-16"^^xsd:date ;
+    pm:hasActualStart "2025-11-12"^^xsd:date ;
+    pm:hasActualEnd "2025-11-13"^^xsd:date ;
+    pm:hasParent ex:S2 ;
+    pm:assignedTo ex:U4 ;
+    pm:estimatedEffort "P5D"^^xsd:duration ;
+    pm:actualEffort "P2D"^^xsd:duration ;
+    sro:hasState sro:InProgress .
+
+ex:T6 a pm:Task ;
+    rdfs:label "Profile end-to-end test"@en ;
+    pm:taskDescription "Create comprehensive E2E tests for profile flow" ;
+    pm:hasPlannedStart "2025-11-14"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-15"^^xsd:date ;
+    pm:hasActualStart "2025-11-14"^^xsd:date ;
+    pm:hasActualEnd "2025-11-15"^^xsd:date ;
+    pm:hasParent ex:S2 ;
+    pm:assignedTo ex:U5 ;
+    pm:estimatedEffort "P2D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+# --- Story S3 Tasks (Welcome Tour) ---
+
+ex:T7 a pm:Task ;
+    rdfs:label "Build tour steps"@en ;
+    pm:taskDescription "Create interactive tour component with step definitions" ;
+    pm:hasPlannedStart "2025-11-10"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-14"^^xsd:date ;
+    pm:hasActualStart "2025-11-10"^^xsd:date ;
+    pm:hasParent ex:S3 ;
+    pm:assignedTo ex:U4 ;
+    pm:estimatedEffort "P4D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+ex:T8 a pm:Task ;
+    rdfs:label "Integrate tour trigger"@en ;
+    pm:taskDescription "Add logic to show tour on first login" ;
+    pm:hasPlannedStart "2025-11-12"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-17"^^xsd:date ;
+    pm:hasParent ex:S3 ;
+    pm:assignedTo ex:U4 ;
+    pm:estimatedEffort "P5D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+# --- Story S4 Tasks (Metrics Ingestion) ---
+
+ex:T9 a pm:Task ;
+    rdfs:label "ETL pipeline skeleton"@en ;
+    pm:taskDescription "Build core ETL framework with scheduling" ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-08"^^xsd:date ;
+    pm:hasActualStart "2025-11-03"^^xsd:date ;
+    pm:hasActualEnd "2025-11-08"^^xsd:date ;
+    pm:hasParent ex:S4 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P5D"^^xsd:duration ;
+    pm:actualEffort "P5D"^^xsd:duration ;
+    sro:hasState sro:Done .
+
+ex:T10 a pm:Task ;
+    rdfs:label "ETL error handling"@en ;
+    pm:taskDescription "Implement robust error handling and retry logic" ;
+    pm:hasPlannedStart "2025-11-06"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-13"^^xsd:date ;
+    pm:hasActualStart "2025-11-08"^^xsd:date ;
+    pm:hasActualEnd "2025-11-13"^^xsd:date ;
+    pm:hasParent ex:S4 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P7D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+# --- Story S5 Tasks (Chart Components) ---
+
+ex:T11 a pm:Task ;
+    rdfs:label "Build LineChart"@en ;
+    pm:taskDescription "Create reusable line chart component" ;
+    pm:hasPlannedStart "2025-11-08"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-13"^^xsd:date ;
+    pm:hasActualStart "2025-11-08"^^xsd:date ;
+    pm:hasActualEnd "2025-11-13"^^xsd:date ;
+    pm:hasParent ex:S5 ;
+    pm:assignedTo ex:U4 ;
+    pm:estimatedEffort "P5D"^^xsd:duration ;
+    sro:hasState sro:Done .
+
+ex:T12 a pm:Task ;
+    rdfs:label "Build BarChart"@en ;
+    pm:taskDescription "Create reusable bar chart component" ;
+    pm:hasPlannedStart "2025-11-09"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-14"^^xsd:date ;
+    pm:hasActualStart "2025-11-09"^^xsd:date ;
+    pm:hasActualEnd "2025-11-14"^^xsd:date ;
+    pm:hasParent ex:S5 ;
+    pm:assignedTo ex:U4 ;
+    pm:estimatedEffort "P5D"^^xsd:duration ;
+    sro:hasState sro:Done .
+
+ex:T13 a pm:Task ;
+    rdfs:label "Chart theming"@en ;
+    pm:taskDescription "Add theme support for light/dark modes" ;
+    pm:hasPlannedStart "2025-11-11"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-18"^^xsd:date ;
+    pm:hasActualStart "2025-11-14"^^xsd:date ;
+    pm:hasActualEnd "2025-11-18"^^xsd:date ;
+    pm:hasParent ex:S5 ;
+    pm:assignedTo ex:U4 ;
+    pm:estimatedEffort "P7D"^^xsd:duration ;
+    sro:hasState sro:Done .
+
+# --- Story S6 Tasks (Export to CSV) ---
+
+ex:T14 a pm:Task ;
+    rdfs:label "CSV serializer"@en ;
+    pm:taskDescription "Build CSV export functionality with proper encoding" ;
+    pm:hasPlannedStart "2025-11-15"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-19"^^xsd:date ;
+    pm:hasParent ex:S6 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P4D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+ex:T15 a pm:Task ;
+    rdfs:label "Export UI"@en ;
+    pm:taskDescription "Add export button and progress indicator" ;
+    pm:hasPlannedStart "2025-11-16"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-21"^^xsd:date ;
+    pm:hasParent ex:S6 ;
+    pm:assignedTo ex:U4 ;
+    pm:estimatedEffort "P5D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+# --- Story S7 Tasks (Payment Provider Selection) ---
+
+ex:T16 a pm:Task ;
+    rdfs:label "RFP and shortlist"@en ;
+    pm:taskDescription "Research providers and create shortlist" ;
+    pm:hasPlannedStart "2025-11-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-07"^^xsd:date ;
+    pm:hasActualStart "2025-11-03"^^xsd:date ;
+    pm:hasActualEnd "2025-11-07"^^xsd:date ;
+    pm:hasParent ex:S7 ;
+    pm:assignedTo ex:U1 ;
+    pm:estimatedEffort "P4D"^^xsd:duration ;
+    sro:hasState sro:Done .
+
+ex:T17 a pm:Task ;
+    rdfs:label "Security review"@en ;
+    pm:taskDescription "Conduct security assessment of payment providers" ;
+    pm:hasPlannedStart "2025-11-06"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-10"^^xsd:date ;
+    pm:hasActualStart "2025-11-07"^^xsd:date ;
+    pm:hasActualEnd "2025-11-10"^^xsd:date ;
+    pm:hasParent ex:S7 ;
+    pm:assignedTo ex:U5 ;
+    pm:estimatedEffort "P4D"^^xsd:duration ;
+    sro:hasState sro:Done .
+
+# --- Story S8 Tasks (Checkout Flow) ---
+
+ex:T18 a pm:Task ;
+    rdfs:label "Checkout UI"@en ;
+    pm:taskDescription "Build checkout interface with payment form" ;
+    pm:hasPlannedStart "2025-11-10"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-17"^^xsd:date ;
+    pm:hasActualStart "2025-11-10"^^xsd:date ;
+    pm:hasParent ex:S8 ;
+    pm:assignedTo ex:U4 ;
+    pm:estimatedEffort "P7D"^^xsd:duration ;
+    sro:hasState sro:InProgress .
+
+ex:T19 a pm:Task ;
+    rdfs:label "Payment intents backend"@en ;
+    pm:taskDescription "Implement payment processing backend logic" ;
+    pm:hasPlannedStart "2025-11-12"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-20"^^xsd:date ;
+    pm:hasParent ex:S8 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P8D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+ex:T20 a pm:Task ;
+    rdfs:label "3DS flow"@en ;
+    pm:taskDescription "Integrate 3D Secure authentication" ;
+    pm:hasPlannedStart "2025-11-15"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-23"^^xsd:date ;
+    pm:hasParent ex:S8 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P8D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+# --- Story S9 Tasks (Refunds and Webhooks) ---
+
+ex:T21 a pm:Task ;
+    rdfs:label "Refund API"@en ;
+    pm:taskDescription "Build refund processing API" ;
+    pm:hasPlannedStart "2025-11-21"^^xsd:date ;
+    pm:hasPlannedEnd "2025-11-30"^^xsd:date ;
+    pm:hasParent ex:S9 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P9D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+ex:T22 a pm:Task ;
+    rdfs:label "Webhook handlers"@en ;
+    pm:taskDescription "Implement webhook endpoints for payment events" ;
+    pm:hasPlannedStart "2025-11-24"^^xsd:date ;
+    pm:hasPlannedEnd "2025-12-03"^^xsd:date ;
+    pm:hasParent ex:S9 ;
+    pm:assignedTo ex:U3 ;
+    pm:estimatedEffort "P9D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+ex:T23 a pm:Task ;
+    rdfs:label "E2E payments test"@en ;
+    pm:taskDescription "Comprehensive end-to-end payment testing" ;
+    pm:hasPlannedStart "2025-12-03"^^xsd:date ;
+    pm:hasPlannedEnd "2025-12-08"^^xsd:date ;
+    pm:hasParent ex:S9 ;
+    pm:assignedTo ex:U5 ;
+    pm:estimatedEffort "P5D"^^xsd:duration ;
+    sro:hasState sro:ToDo .
+
+# ============================================================================
+# 7. DEPENDENCIES (Reified with Direct Edges for CPM)
+# ============================================================================
+
+# Story-level dependencies
+ex:S1 pm:finishToStart ex:S2 .
+ex:S2 pm:startToStart ex:S3 .
+
+ex:dep_S1_S2 a pm:Dependency ;
+    pm:predecessor ex:S1 ;
+    pm:successor ex:S2 ;
+    pm:linkType pm:FinishToStart ;
+    pm:lagDuration "P0D"^^xsd:duration .
+ex:S1 pm:hasOutgoingDependency ex:dep_S1_S2 .
+ex:S2 pm:hasIncomingDependency ex:dep_S1_S2 .
+
+ex:dep_S2_S3 a pm:Dependency ;
+    pm:predecessor ex:S2 ;
+    pm:successor ex:S3 ;
+    pm:linkType pm:StartToStart ;
+    pm:lagDuration "P0D"^^xsd:duration .
+ex:S2 pm:hasOutgoingDependency ex:dep_S2_S3 .
+ex:S3 pm:hasIncomingDependency ex:dep_S2_S3 .
+
+# Task-level dependencies (abbreviated for key chains)
+ex:T1 pm:finishToStart ex:T2 .
+ex:T2 pm:finishToFinish ex:T3 .
+ex:T4 pm:startToStart ex:T5 .
+ex:T5 pm:finishToStart ex:T6 .
+ex:T2 pm:startToFinish ex:T7 .
+ex:T7 pm:finishToStart ex:T8 .
+
+ex:S4 pm:startToStart ex:S5 .
+ex:S5 pm:finishToFinish ex:S6 .
+ex:T9 pm:finishToStart ex:T10 .
+ex:T11 pm:finishToFinish ex:T13 .
+ex:T12 pm:finishToFinish ex:T13 .
+ex:T14 pm:finishToStart ex:T15 .
+
+ex:T16 pm:finishToStart ex:T17 .
+ex:T17 pm:finishToStart ex:T18 .
+ex:T18 pm:finishToStart ex:T19 .
+ex:T19 pm:finishToStart ex:T20 .
+ex:T20 pm:finishToStart ex:T21 .
+ex:T21 pm:finishToStart ex:T22 .
+ex:T22 pm:finishToStart ex:T23 .
+
+# ============================================================================
+# 8. DELIVERABLES & ACCEPTANCE
+# ============================================================================
+
+# Story S1 Deliverable (Done - has AcceptedDeliverable)
+ex:Deliverable_S1 a sro:AcceptedDeliverable ;
+    rdfs:label "User Registration API"@en ;
+    sro:materializes ex:S1 ;
+    sro:acceptedBy ex:U1 ;
+    sro:acceptanceDate "2025-11-09"^^xsd:date ;
+    rdfs:comment "Fully functional signup API with email validation and confirmation" .
+
+# Story S2 Deliverable (Done)
+ex:Deliverable_S2 a sro:AcceptedDeliverable ;
+    rdfs:label "User Profile System"@en ;
+    sro:materializes ex:S2 ;
+    sro:acceptedBy ex:U1 ;
+    sro:acceptanceDate "2025-11-15"^^xsd:date ;
+    rdfs:comment "Complete profile creation and editing functionality" .
+
+# Story S4 Deliverable (Done)
+ex:Deliverable_S4 a sro:AcceptedDeliverable ;
+    rdfs:label "Metrics ETL Pipeline"@en ;
+    sro:materializes ex:S4 ;
+    sro:acceptedBy ex:U1 ;
+    sro:acceptanceDate "2025-11-13"^^xsd:date ;
+    rdfs:comment "Automated data ingestion with error handling" .
+
+# Story S5 Deliverable (Done)
+ex:Deliverable_S5 a sro:AcceptedDeliverable ;
+    rdfs:label "Interactive Chart Library"@en ;
+    sro:materializes ex:S5 ;
+    sro:acceptedBy ex:U1 ;
+    sro:acceptanceDate "2025-11-18"^^xsd:date ;
+    rdfs:comment "Reusable line and bar chart components with theming" .
+
+# Story S7 Deliverable (Done)
+ex:Deliverable_S7 a sro:AcceptedDeliverable ;
+    rdfs:label "Payment Provider Selection Report"@en ;
+    sro:materializes ex:S7 ;
+    sro:acceptedBy ex:U1 ;
+    sro:acceptanceDate "2025-11-10"^^xsd:date ;
+    rdfs:comment "Provider evaluation with security review and recommendation" .
+
+# ============================================================================
+# 9. PROVENANCE & METADATA
+# ============================================================================
+
+ex:ProjectAlpha prov:wasGeneratedBy [
+    a prov:Activity ;
+    rdfs:label "Project Initialization"@en ;
+    prov:startedAtTime "2025-11-01T09:00:00Z"^^xsd:dateTime ;
+    prov:wasAssociatedWith ex:U1
+] .
+
+# ============================================================================
+# END OF ENHANCED SCRUM PROJECT EXAMPLE
+# ============================================================================

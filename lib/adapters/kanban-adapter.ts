@@ -17,7 +17,10 @@ export interface KanbanItem {
   description?: string;
   assignee?: string;
   storyPoints?: number;
-  priority?: number;
+  priority?: string; // low, medium, high
+  start?: Date;
+  end?: Date;
+  progress?: number;
 }
 
 /**
@@ -55,6 +58,20 @@ export function storiesToKanbanFormat(stories: UserStory[]): KanbanItem[] {
 }
 
 /**
+ * Map frontend priority to kanban display format
+ */
+function mapPriorityToKanban(priority?: Task['priority']): string | undefined {
+  const priorityMap: Record<string, string> = {
+    'urgent': 'high',
+    'high': 'high',
+    'medium': 'medium',
+    'low': 'low',
+    'none': 'low',
+  };
+  return priority ? priorityMap[priority] || 'medium' : undefined;
+}
+
+/**
  * Convert tasks to Kanban items
  */
 export function tasksToKanbanFormat(tasks: Task[]): KanbanItem[] {
@@ -64,6 +81,10 @@ export function tasksToKanbanFormat(tasks: Task[]): KanbanItem[] {
     column: task.status,
     description: task.description,
     assignee: task.assignee,
+    priority: mapPriorityToKanban(task.priority),
+    start: task.startDate ? new Date(task.startDate) : undefined,
+    end: task.endDate ? new Date(task.endDate) : undefined,
+    progress: task.status === 'completed' ? 100 : task.status === 'in-progress' ? 50 : 0,
   }));
 }
 

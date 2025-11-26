@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   KanbanBoard,
   KanbanCard,
@@ -8,8 +8,9 @@ import {
   KanbanHeader,
   KanbanProvider,
 } from '@/components/kanban';
-import { useAppStore } from '@/lib/stores/app-store';
-import { tasksToKanbanFormat, taskKanbanColumns } from '@/lib/adapters/kanban-adapter';
+import { tasksToKanbanFormat, taskKanbanColumns, kanbanToTaskUpdate } from '@/lib/adapters/kanban-adapter';
+import { useProjectData, useUpdateTask } from '@/lib/hooks/use-project-data';
+import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -17,21 +18,53 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 });
 
 export function TaskKanbanBoard() {
-  const rdfTasks = useAppStore((state) => state.tasks);
+  // Get tasks directly from React Query cache
+  const { data, isLoading } = useProjectData(DEFAULT_PROJECT_SLUG);
+  const rdfTasks = data?.tasks || [];
+
+  const updateTaskMutation = useUpdateTask(DEFAULT_PROJECT_SLUG);
   const kanbanTasks = tasksToKanbanFormat(rdfTasks);
   const [tasks, setTasks] = useState(kanbanTasks);
 
-  // Update local state when store changes
+  // Update local state when React Query data changes
   useEffect(() => {
     setTasks(tasksToKanbanFormat(rdfTasks));
   }, [rdfTasks]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[600px] items-center justify-center">
+        <p className="text-muted-foreground">Loading tasks...</p>
+      </div>
+    );
+  }
+
+  // Handle task movement between columns
+  const handleDataChange = useCallback((newTasks: typeof tasks) => {
+    // Update local state immediately for responsive UI
+    setTasks(newTasks);
+
+    // Find which task changed and sync to backend
+    newTasks.forEach((newTask) => {
+      const oldTask = tasks.find((t) => t.id === newTask.id);
+
+      // If column changed, update the task status
+      if (oldTask && oldTask.column !== newTask.column) {
+        const updates = kanbanToTaskUpdate(newTask);
+        updateTaskMutation.mutate({
+          taskId: newTask.id,
+          updates,
+        });
+      }
+    });
+  }, [tasks, updateTaskMutation]);
 
   return (
     <div className="h-[600px]">
       <KanbanProvider
         columns={taskKanbanColumns}
         data={tasks}
-        onDataChange={setTasks}
+        onDataChange={handleDataChange}
       >
         {(column) => (
           <KanbanBoard id={column.id} key={column.id}>
@@ -61,7 +94,7 @@ export function TaskKanbanBoard() {
                         <span
                           className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
                           style={{
-                            backgroundColor: 
+                            backgroundColor:
                               task.priority === 'high' ? '#EF4444' :
                               task.priority === 'medium' ? '#F59E0B' : '#6B7280',
                             color: 'white',

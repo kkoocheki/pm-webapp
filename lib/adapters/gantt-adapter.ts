@@ -29,8 +29,21 @@ export interface GanttData {
 }
 
 /**
+ * Map task itemType to Gantt display type
+ * 'project' (Epic) -> 'summary' (displayed as summary/parent row)
+ * 'summary' (UserStory) -> 'summary' (displayed as summary/parent row)
+ * 'task' (Task) -> 'task' (displayed as regular task bar)
+ */
+function mapItemTypeToGanttType(itemType?: Task['itemType']): GanttTask['type'] {
+  if (itemType === 'project' || itemType === 'summary') {
+    return 'summary';
+  }
+  return 'task';
+}
+
+/**
  * Convert stories and tasks to Gantt format
- * Stories become summary tasks, tasks become regular tasks
+ * Uses itemType to determine display: 'project'/'summary' -> summary rows, 'task' -> task bars
  */
 export function storiesAndTasksToGanttFormat(
   stories: UserStory[],
@@ -39,12 +52,12 @@ export function storiesAndTasksToGanttFormat(
 ): GanttData {
   const ganttTasks: GanttTask[] = [];
   const ganttLinks: GanttLink[] = [];
-  
+
   // Map to track original IDs to Gantt numeric IDs
   const idMap = new Map<string, number>();
   let nextId = 1;
 
-  // Add stories as summary tasks
+  // Add stories as summary tasks (legacy support)
   stories.forEach((story) => {
     const storyId = nextId++;
     idMap.set(story.id, storyId);
@@ -63,16 +76,28 @@ export function storiesAndTasksToGanttFormat(
     });
   });
 
-  // Add tasks
-  tasks.forEach((task) => {
+  // Process tasks - first pass: assign IDs to all items (in order: project/epics first, then summary/stories, then tasks)
+  // Sort by itemType to ensure parents are processed before children
+  const sortedTasks = [...tasks].sort((a, b) => {
+    const order = { 'project': 0, 'summary': 1, 'task': 2 };
+    const aOrder = order[a.itemType || 'task'] ?? 2;
+    const bOrder = order[b.itemType || 'task'] ?? 2;
+    return aOrder - bOrder;
+  });
+
+  // Assign numeric IDs first
+  sortedTasks.forEach((task) => {
     const taskId = nextId++;
     idMap.set(task.id, taskId);
+  });
 
-    // Find parent story ID
+  // Second pass: create Gantt tasks with parent references
+  sortedTasks.forEach((task) => {
+    const taskNumericId = idMap.get(task.id)!;
     const parentGanttId = task.parentId ? idMap.get(task.parentId) : undefined;
 
     ganttTasks.push({
-      id: taskId,
+      id: taskNumericId,
       text: task.title,
       start: task.actualStart ? new Date(task.actualStart) : new Date(task.startDate || Date.now()),
       end: task.actualEnd ? new Date(task.actualEnd) : new Date(task.endDate || Date.now()),
@@ -81,7 +106,7 @@ export function storiesAndTasksToGanttFormat(
         task.actualEnd || task.endDate
       ),
       progress: task.status === 'completed' ? 100 : task.status === 'in-progress' ? 50 : 0,
-      type: 'task',
+      type: mapItemTypeToGanttType(task.itemType),
       parent: parentGanttId,
     });
   });

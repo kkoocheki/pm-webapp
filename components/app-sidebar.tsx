@@ -7,6 +7,7 @@ import {
   GanttChart,
   Network,
   Sparkles,
+  Upload,
   ChevronRight,
 } from 'lucide-react';
 
@@ -51,6 +52,11 @@ const navItems = [
     title: 'Insights',
     url: '/insights',
     icon: Sparkles,
+  },
+  {
+    title: 'Import',
+    url: '/import',
+    icon: Upload,
   },
 ];
 

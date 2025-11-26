@@ -4,12 +4,20 @@
  * Aligned with the Scrum PM Ontology (sro:) and Project Management Ontology (pm:)
  */
 
+// Task item type (matches BackendTaskType)
+export type TaskItemType = 'project' | 'summary' | 'task';
+
+// Priority levels
+export type TaskPriority = 'urgent' | 'high' | 'medium' | 'low' | 'none';
+
 // Task (pm:Task)
 export interface Task {
   id: string;
   title: string;
   description?: string;
   status: TaskStatus;
+  itemType?: TaskItemType; // 'project' = Epic, 'summary' = UserStory, 'task' = Task
+  priority?: TaskPriority; // Task priority level
   assignee?: string;
   startDate?: string;
   endDate?: string;
