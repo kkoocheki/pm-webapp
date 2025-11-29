@@ -5,13 +5,13 @@
 
 import { UserStory, Task } from '@/lib/api/types';
 
-export interface KanbanColumn {
+export interface KanbanColumn extends Record<string, unknown> {
   id: string;
   name: string;
   color?: string;
 }
 
-export interface KanbanItem {
+export interface KanbanItem extends Record<string, unknown> {
   id: string;
   name: string;
   column: string;
@@ -54,7 +54,7 @@ export function storiesToKanbanFormat(stories: UserStory[]): KanbanItem[] {
     description: story.storyText,
     assignee: story.assignee,
     storyPoints: story.storyPoints,
-    priority: story.priority,
+    priority: story.priority >= 3 ? 'high' : story.priority >= 2 ? 'medium' : 'low',
   }));
 }
 

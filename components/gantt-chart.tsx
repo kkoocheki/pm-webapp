@@ -86,17 +86,44 @@ export function GanttChart({ showAddButton = false, onCreateTask }: GanttChartPr
   const initGantt = useCallback((ganttApi: any) => {
     console.log('[Gantt] initGantt called, setting API');
     setApi(ganttApi);
-    
+
     // Listen for show-editor to debug
     ganttApi.on('show-editor', ({ id }: { id: string }) => {
       console.log('[Gantt] show-editor event for task:', id);
     });
-    
+
+    // Listen for hide-editor to capture saved changes
+    ganttApi.on('hide-editor', ({ id, values }: { id: string; values?: any }) => {
+      console.log('[Gantt] hide-editor event for task:', id, 'values:', values);
+
+      // If values are provided, the user saved changes in the editor
+      if (values && !isSyncingRef.current) {
+        isSyncingRef.current = true;
+        const fullTask = ganttApi.getTask(id);
+
+        console.log('[Gantt] Syncing editor changes to backend:', fullTask);
+
+        mutationsRef.current.updateTaskMutation.mutate({
+          taskId: id,
+          updates: {
+            title: fullTask?.text || values.text,
+            startDate: formatDate(fullTask?.start || values.start),
+            endDate: formatDate(fullTask?.end || values.end),
+            status: progressToStatus(fullTask?.progress ?? values.progress ?? 0),
+          }
+        }, {
+          onSettled: () => {
+            isSyncingRef.current = false;
+          }
+        });
+      }
+    });
+
     // Show editor when adding a task
     ganttApi.on('add-task', ({ id }: { id: string }) => {
       console.log('[Gantt] add-task event:', id);
       ganttApi.exec('show-editor', { id });
-      
+
       // Sync to backend
       if (!isSyncingRef.current) {
         isSyncingRef.current = true;
@@ -117,15 +144,15 @@ export function GanttChart({ showAddButton = false, onCreateTask }: GanttChartPr
         }
       }
     });
-    
-    // Sync updates to backend
+
+    // Sync updates to backend (for drag-drop, inline edits, etc.)
     ganttApi.on('update-task', ({ id, task: updatedFields }: { id: string; task: any }) => {
       console.log('[Gantt] update-task event:', id, updatedFields);
-      
+
       if (!isSyncingRef.current) {
         isSyncingRef.current = true;
         const fullTask = ganttApi.getTask(id);
-        
+
         mutationsRef.current.updateTaskMutation.mutate({
           taskId: id,
           updates: {
@@ -141,11 +168,11 @@ export function GanttChart({ showAddButton = false, onCreateTask }: GanttChartPr
         });
       }
     });
-    
+
     // Sync deletes to backend
     ganttApi.on('delete-task', ({ id }: { id: string }) => {
       console.log('[Gantt] delete-task event:', id);
-      
+
       if (!isSyncingRef.current) {
         isSyncingRef.current = true;
         mutationsRef.current.deleteTaskMutation.mutate(id, {
