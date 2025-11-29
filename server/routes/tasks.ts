@@ -1,5 +1,9 @@
 /**
  * Tasks API Routes
+ * 
+ * Note: Tasks in the Scrum ontology don't have pm:belongsToProject directly.
+ * They are linked via pm:hasParent to User Stories, which are in Sprint Backlogs.
+ * For simplicity, we use the task IRI directly (ex:<token>) for operations.
  */
 
 import { Hono } from 'hono';
@@ -12,30 +16,28 @@ const app = new Hono();
 
 /**
  * GET /api/projects/:slug/tasks
- * List all tasks for a project
+ * List all tasks (pm:Task instances)
+ * Note: Tasks are retrieved via type, not project association
  */
 app.get('/projects/:slug/tasks', async (c) => {
   try {
-    const slug = c.req.param('slug');
-
+    // Get all tasks
     const query = `
       ${PREFIX_STRING}
-      SELECT ?task ?token ?text ?description ?start_date ?end_date ?duration ?progress ?parent_token ?type ?priority ?status ?assignee
+      SELECT ?task ?text ?description ?start_date ?end_date ?duration ?progress ?parent ?type ?priority ?status ?assignee
       WHERE {
-        ?project pm:slug "${slug}" .
-        ?task pm:belongsToProject ?project .
-        OPTIONAL { ?task pm:token ?token }
-        OPTIONAL { ?task pm:title ?text }
-        OPTIONAL { ?task pm:description ?description }
-        OPTIONAL { ?task pm:startDate ?start_date }
-        OPTIONAL { ?task pm:endDate ?end_date }
+        ?task a pm:Task .
+        OPTIONAL { ?task rdfs:label ?text }
+        OPTIONAL { ?task pm:taskDescription ?description }
+        OPTIONAL { ?task pm:hasPlannedStart ?start_date }
+        OPTIONAL { ?task pm:hasPlannedEnd ?end_date }
         OPTIONAL { ?task pm:duration ?duration }
         OPTIONAL { ?task pm:progress ?progress }
-        OPTIONAL { ?task pm:hasParent/pm:token ?parent_token }
+        OPTIONAL { ?task pm:hasParent ?parent }
         OPTIONAL { ?task pm:type ?type }
-        OPTIONAL { ?task pm:priority ?priority }
-        OPTIONAL { ?task pm:status ?status }
-        OPTIONAL { ?task pm:assignedTo/pm:name ?assignee }
+        OPTIONAL { ?task sro:hasPriority ?priority }
+        OPTIONAL { ?task sro:hasState ?status }
+        OPTIONAL { ?task pm:assignedTo ?assigneeUri . ?assigneeUri rdfs:label ?assignee }
       }
       ORDER BY ?start_date ?text
     `;
@@ -52,31 +54,30 @@ app.get('/projects/:slug/tasks', async (c) => {
 
 /**
  * GET /api/projects/:slug/tasks/:token
- * Get a specific task
+ * Get a specific task by token (which is derived from IRI)
  */
 app.get('/projects/:slug/tasks/:token', async (c) => {
   try {
-    const { slug, token } = c.req.param();
+    const { token } = c.req.param();
+    const taskIRI = `${PREFIXES.ex}${token}`;
 
     const query = `
       ${PREFIX_STRING}
-      SELECT ?task ?token ?text ?description ?start_date ?end_date ?duration ?progress ?parent_token ?type ?priority ?status ?assignee
+      SELECT ?task ?text ?description ?start_date ?end_date ?duration ?progress ?parent ?type ?priority ?status ?assignee
       WHERE {
-        ?project pm:slug "${slug}" .
-        ?task pm:belongsToProject ?project ;
-              pm:token "${token}" .
-        BIND("${token}" AS ?token)
-        OPTIONAL { ?task pm:title ?text }
-        OPTIONAL { ?task pm:description ?description }
-        OPTIONAL { ?task pm:startDate ?start_date }
-        OPTIONAL { ?task pm:endDate ?end_date }
+        BIND(<${taskIRI}> AS ?task)
+        ?task a pm:Task .
+        OPTIONAL { ?task rdfs:label ?text }
+        OPTIONAL { ?task pm:taskDescription ?description }
+        OPTIONAL { ?task pm:hasPlannedStart ?start_date }
+        OPTIONAL { ?task pm:hasPlannedEnd ?end_date }
         OPTIONAL { ?task pm:duration ?duration }
         OPTIONAL { ?task pm:progress ?progress }
-        OPTIONAL { ?task pm:hasParent/pm:token ?parent_token }
+        OPTIONAL { ?task pm:hasParent ?parent }
         OPTIONAL { ?task pm:type ?type }
-        OPTIONAL { ?task pm:priority ?priority }
-        OPTIONAL { ?task pm:status ?status }
-        OPTIONAL { ?task pm:assignedTo/pm:name ?assignee }
+        OPTIONAL { ?task sro:hasPriority ?priority }
+        OPTIONAL { ?task sro:hasState ?status }
+        OPTIONAL { ?task pm:assignedTo ?assigneeUri . ?assigneeUri rdfs:label ?assignee }
       }
     `;
 
@@ -104,28 +105,28 @@ app.post('/projects/:slug/tasks', async (c) => {
 
     const token = body.token || generateUniqueToken('task');
     const text = body.text || 'Untitled Task';
-    const taskIRI = `${PREFIXES.pm}Task/${token}`;
-    const projectIRI = `${PREFIXES.pm}Project/${slug}`;
+    const taskIRI = `${PREFIXES.ex}${token}`;
+    const projectIRI = `${PREFIXES.ex}${slug}`;
 
     const triples: string[] = [
       `<${taskIRI}> a pm:Task`,
       `<${taskIRI}> pm:token "${token}"`,
-      `<${taskIRI}> pm:title "${escapeSparqlString(text)}"`,
+      `<${taskIRI}> rdfs:label "${escapeSparqlString(text)}"@en`,
       `<${taskIRI}> pm:belongsToProject <${projectIRI}>`,
     ];
 
-    if (body.description) triples.push(`<${taskIRI}> pm:description "${escapeSparqlString(body.description)}"`);
-    if (body.start_date) triples.push(`<${taskIRI}> pm:startDate "${body.start_date}"^^xsd:date`);
-    if (body.end_date) triples.push(`<${taskIRI}> pm:endDate "${body.end_date}"^^xsd:date`);
+    if (body.description) triples.push(`<${taskIRI}> pm:taskDescription "${escapeSparqlString(body.description)}"`);
+    if (body.start_date) triples.push(`<${taskIRI}> pm:hasPlannedStart "${body.start_date}"^^xsd:date`);
+    if (body.end_date) triples.push(`<${taskIRI}> pm:hasPlannedEnd "${body.end_date}"^^xsd:date`);
     if (body.duration) triples.push(`<${taskIRI}> pm:duration "${body.duration}"^^xsd:integer`);
     if (body.progress !== undefined) triples.push(`<${taskIRI}> pm:progress "${body.progress}"^^xsd:float`);
     if (body.type) triples.push(`<${taskIRI}> pm:type "${body.type}"`);
-    if (body.priority) triples.push(`<${taskIRI}> pm:priority "${body.priority}"`);
-    if (body.status) triples.push(`<${taskIRI}> pm:status "${body.status}"`);
+    if (body.priority) triples.push(`<${taskIRI}> sro:hasPriority sro:${body.priority}`);
+    if (body.status) triples.push(`<${taskIRI}> sro:hasState sro:${body.status}`);
 
     if (body.parent_token) {
-      triples.push(`<${taskIRI}> pm:hasParent ?parent`);
-      triples.push(`?parent pm:token "${body.parent_token}"`);
+      const parentIRI = `${PREFIXES.ex}${body.parent_token}`;
+      triples.push(`<${taskIRI}> pm:hasParent <${parentIRI}>`);
     }
 
     const insertQuery = `
@@ -168,25 +169,27 @@ app.put('/projects/:slug/tasks/:token', async (c) => {
     const { slug, token } = c.req.param();
     const body = await c.req.json<Partial<Task>>();
 
-    // Build delete/insert patterns
+    console.log('[Tasks PUT] Updating task:', token, 'with body:', body);
+
+    // Build delete/insert patterns using proper RDF predicates
     const deletePatterns: string[] = [];
     const insertPatterns: string[] = [];
 
     if (body.text !== undefined) {
-      deletePatterns.push('?task pm:title ?oldTitle');
-      insertPatterns.push(`?task pm:title "${escapeSparqlString(body.text)}"`);
+      deletePatterns.push('?task rdfs:label ?oldText');
+      insertPatterns.push(`?task rdfs:label "${escapeSparqlString(body.text)}"@en`);
     }
     if (body.description !== undefined) {
-      deletePatterns.push('OPTIONAL { ?task pm:description ?oldDesc }');
-      insertPatterns.push(`?task pm:description "${escapeSparqlString(body.description)}"`);
+      deletePatterns.push('OPTIONAL { ?task pm:taskDescription ?oldDesc }');
+      insertPatterns.push(`?task pm:taskDescription "${escapeSparqlString(body.description)}"`);
     }
     if (body.start_date !== undefined) {
-      deletePatterns.push('OPTIONAL { ?task pm:startDate ?oldStart }');
-      insertPatterns.push(`?task pm:startDate "${body.start_date}"^^xsd:date`);
+      deletePatterns.push('OPTIONAL { ?task pm:hasPlannedStart ?oldStart }');
+      insertPatterns.push(`?task pm:hasPlannedStart "${body.start_date}"^^xsd:date`);
     }
     if (body.end_date !== undefined) {
-      deletePatterns.push('OPTIONAL { ?task pm:endDate ?oldEnd }');
-      insertPatterns.push(`?task pm:endDate "${body.end_date}"^^xsd:date`);
+      deletePatterns.push('OPTIONAL { ?task pm:hasPlannedEnd ?oldEnd }');
+      insertPatterns.push(`?task pm:hasPlannedEnd "${body.end_date}"^^xsd:date`);
     }
     if (body.duration !== undefined) {
       deletePatterns.push('OPTIONAL { ?task pm:duration ?oldDur }');
@@ -197,12 +200,12 @@ app.put('/projects/:slug/tasks/:token', async (c) => {
       insertPatterns.push(`?task pm:progress "${body.progress}"^^xsd:float`);
     }
     if (body.status !== undefined) {
-      deletePatterns.push('OPTIONAL { ?task pm:status ?oldStatus }');
-      insertPatterns.push(`?task pm:status "${body.status}"`);
+      deletePatterns.push('OPTIONAL { ?task sro:hasState ?oldStatus }');
+      insertPatterns.push(`?task sro:hasState sro:${body.status}`);
     }
     if (body.priority !== undefined) {
-      deletePatterns.push('OPTIONAL { ?task pm:priority ?oldPriority }');
-      insertPatterns.push(`?task pm:priority "${body.priority}"`);
+      deletePatterns.push('OPTIONAL { ?task sro:hasPriority ?oldPriority }');
+      insertPatterns.push(`?task sro:hasPriority sro:${body.priority}`);
     }
     if (body.type !== undefined) {
       deletePatterns.push('OPTIONAL { ?task pm:type ?oldType }');
@@ -213,25 +216,39 @@ app.put('/projects/:slug/tasks/:token', async (c) => {
       return c.json({ error: 'No updates provided' }, 400);
     }
 
-    const updateQuery = `
+    // Use DELETE WHERE + INSERT WHERE pattern which is more reliable
+    const taskIRI = `${PREFIXES.ex}${token}`;
+    
+    // Build separate DELETE and INSERT queries for more reliable execution
+    const deleteQuery = `
       ${PREFIX_STRING}
       DELETE {
-        ${deletePatterns.join(' .\n        ')} .
-      }
-      INSERT {
-        ${insertPatterns.join(' .\n        ')} .
+        ${deletePatterns.map(p => p.replace('OPTIONAL { ', '').replace(' }', '')).join(' .\n        ')} .
       }
       WHERE {
-        ?project pm:slug "${slug}" .
-        ?task pm:belongsToProject ?project ;
-              pm:token "${token}" .
+        BIND(<${taskIRI}> AS ?task)
         ${deletePatterns.join(' .\n        ')} .
       }
     `;
 
-    await sparqlUpdate(updateQuery);
+    const insertQuery = `
+      ${PREFIX_STRING}
+      INSERT {
+        ${insertPatterns.join(' .\n        ')} .
+      }
+      WHERE {
+        BIND(<${taskIRI}> AS ?task)
+        ?task a pm:Task .
+      }
+    `;
 
-    return c.json({ message: 'Task updated successfully' });
+    console.log('[Tasks PUT] Delete query:', deleteQuery);
+    console.log('[Tasks PUT] Insert query:', insertQuery);
+
+    await sparqlUpdate(deleteQuery);
+    await sparqlUpdate(insertQuery);
+
+    return c.json({ message: 'Task updated successfully', token });
   } catch (error) {
     console.error('Error updating task:', error);
     return c.json({ error: 'Failed to update task' }, 500);
@@ -245,6 +262,7 @@ app.put('/projects/:slug/tasks/:token', async (c) => {
 app.delete('/projects/:slug/tasks/:token', async (c) => {
   try {
     const { slug, token } = c.req.param();
+    const taskIRI = `${PREFIXES.ex}${token}`;
 
     const deleteQuery = `
       ${PREFIX_STRING}
@@ -253,9 +271,7 @@ app.delete('/projects/:slug/tasks/:token', async (c) => {
         ?link ?lp ?lo .
       }
       WHERE {
-        ?project pm:slug "${slug}" .
-        ?task pm:belongsToProject ?project ;
-              pm:token "${token}" .
+        BIND(<${taskIRI}> AS ?task)
         ?task ?p ?o .
         OPTIONAL {
           ?link a pm:Dependency .

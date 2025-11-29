@@ -1,7 +1,7 @@
 "use client"
 
 import { Row } from "@tanstack/react-table"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, Pencil, Copy, Trash } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,10 +16,14 @@ import { taskSchema } from "../data/schema"
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>
+  onEdit?: (task: { id: string; title: string }) => void
+  onDelete?: (taskId: string) => void
 }
 
 export function DataTableRowActions<TData>({
   row,
+  onEdit,
+  onDelete,
 }: DataTableRowActionsProps<TData>) {
   const task = taskSchema.parse(row.original)
 
@@ -35,10 +39,22 @@ export function DataTableRowActions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem>Edit</DropdownMenuItem>
-        <DropdownMenuItem>Make a copy</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onEdit?.({ id: task.id, title: task.title })}>
+          <Pencil className="mr-2 h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Copy className="mr-2 h-4 w-4" />
+          Make a copy
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Delete</DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => onDelete?.(task.id)}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+// SVAR Gantt - using style.css (all.css has :global() syntax incompatible with Turbopack)
 import "@svar-ui/react-gantt/style.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";

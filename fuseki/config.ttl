@@ -34,8 +34,9 @@
 
 #################################################################
 # Inference model with custom rules
-:infGraph-gantt a ja:InfModel ;
-  ja:baseModel :storeGraph-gantt ;
+#################################################################
+:infGraph-pm a ja:InfModel ;
+  ja:baseModel :storeGraph-pm ;
   ja:reasoner :ruleReasoner .
 
 :ruleReasoner a ja:ReasonerFactory ;

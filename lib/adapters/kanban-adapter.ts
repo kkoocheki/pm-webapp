@@ -8,6 +8,7 @@ import { UserStory, Task } from '@/lib/api/types';
 export interface KanbanColumn {
   id: string;
   name: string;
+  color?: string;
 }
 
 export interface KanbanItem {
@@ -36,10 +37,10 @@ export const storyKanbanColumns: KanbanColumn[] = [
  * Kanban columns based on task states
  */
 export const taskKanbanColumns: KanbanColumn[] = [
-  { id: 'not-started', name: 'Not Started' },
-  { id: 'in-progress', name: 'In Progress' },
-  { id: 'completed', name: 'Completed' },
-  { id: 'blocked', name: 'Blocked' },
+  { id: 'not-started', name: 'Not Started', color: '#6B7280' },
+  { id: 'in-progress', name: 'In Progress', color: '#3B82F6' },
+  { id: 'completed', name: 'Completed', color: '#10B981' },
+  { id: 'blocked', name: 'Blocked', color: '#EF4444' },
 ];
 
 /**
