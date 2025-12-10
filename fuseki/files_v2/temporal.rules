@@ -1,0 +1,373 @@
+# ============================================================================
+# TEMPORAL INFERENCE RULES - Allen's Interval Algebra
+# ============================================================================
+# Version: 2.0.0
+# Date: 2025-11-27
+#
+# These rules implement Allen's interval algebra for temporal reasoning.
+# They work with W3C Time Ontology (time:) and also include bridging rules
+# for the PM ontology's xsd:date based temporal properties.
+#
+# Allen's 13 relations: before, after, meets, met-by, overlaps, overlapped-by,
+# starts, started-by, during, contains, finishes, finished-by, equals
+#
+# Reference: https://www.w3.org/TR/owl-time/
+# ============================================================================
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix time:   <http://www.w3.org/2006/time#> .
+@prefix sro:    <https://www.knoid.io/ontologies/sro#> .
+@prefix pm:     <https://www.knoid.io/ontologies/pm#> .
+@prefix spo:    <https://www.knoid.io/ontologies/spo#> .
+
+
+# ============================================================================
+# SECTION 1: ALLEN'S INTERVAL ALGEBRA - BASIC RELATIONS
+# ============================================================================
+
+# Inverse relations
+[beforeInverse:
+    (?i1 time:intervalBefore ?i2)
+    ->
+    (?i2 time:intervalAfter ?i1)
+]
+
+[afterInverse:
+    (?i1 time:intervalAfter ?i2)
+    ->
+    (?i2 time:intervalBefore ?i1)
+]
+
+[meetsInverse:
+    (?i1 time:intervalMeets ?i2)
+    ->
+    (?i2 time:intervalMetBy ?i1)
+]
+
+[metByInverse:
+    (?i1 time:intervalMetBy ?i2)
+    ->
+    (?i2 time:intervalMeets ?i1)
+]
+
+[overlapsInverse:
+    (?i1 time:intervalOverlaps ?i2)
+    ->
+    (?i2 time:intervalOverlappedBy ?i1)
+]
+
+[overlappedByInverse:
+    (?i1 time:intervalOverlappedBy ?i2)
+    ->
+    (?i2 time:intervalOverlaps ?i1)
+]
+
+[startsInverse:
+    (?i1 time:intervalStarts ?i2)
+    ->
+    (?i2 time:intervalStartedBy ?i1)
+]
+
+[startedByInverse:
+    (?i1 time:intervalStartedBy ?i2)
+    ->
+    (?i2 time:intervalStarts ?i1)
+]
+
+[duringInverse:
+    (?i1 time:intervalDuring ?i2)
+    ->
+    (?i2 time:intervalContains ?i1)
+]
+
+[containsInverse:
+    (?i1 time:intervalContains ?i2)
+    ->
+    (?i2 time:intervalDuring ?i1)
+]
+
+[finishesInverse:
+    (?i1 time:intervalFinishes ?i2)
+    ->
+    (?i2 time:intervalFinishedBy ?i1)
+]
+
+[finishedByInverse:
+    (?i1 time:intervalFinishedBy ?i2)
+    ->
+    (?i2 time:intervalFinishes ?i1)
+]
+
+[equalsSymmetric:
+    (?i1 time:intervalEquals ?i2)
+    ->
+    (?i2 time:intervalEquals ?i1)
+]
+
+
+# ============================================================================
+# SECTION 2: ALLEN'S INTERVAL ALGEBRA - TRANSITIVITY RULES
+# ============================================================================
+
+# Before is transitive
+[beforeTransitive:
+    (?i1 time:intervalBefore ?i2)
+    (?i2 time:intervalBefore ?i3)
+    ->
+    (?i1 time:intervalBefore ?i3)
+]
+
+# After is transitive
+[afterTransitive:
+    (?i1 time:intervalAfter ?i2)
+    (?i2 time:intervalAfter ?i3)
+    ->
+    (?i1 time:intervalAfter ?i3)
+]
+
+# During is transitive
+[duringTransitive:
+    (?i1 time:intervalDuring ?i2)
+    (?i2 time:intervalDuring ?i3)
+    ->
+    (?i1 time:intervalDuring ?i3)
+]
+
+# Contains is transitive
+[containsTransitive:
+    (?i1 time:intervalContains ?i2)
+    (?i2 time:intervalContains ?i3)
+    ->
+    (?i1 time:intervalContains ?i3)
+]
+
+# Meets + before = before
+[meetsBeforeComposition:
+    (?i1 time:intervalMeets ?i2)
+    (?i2 time:intervalBefore ?i3)
+    ->
+    (?i1 time:intervalBefore ?i3)
+]
+
+# Before + meets = before
+[beforeMeetsComposition:
+    (?i1 time:intervalBefore ?i2)
+    (?i2 time:intervalMeets ?i3)
+    ->
+    (?i1 time:intervalBefore ?i3)
+]
+
+# Equals composition (identity)
+[equalsComposition:
+    (?i1 time:intervalEquals ?i2)
+    (?i2 ?rel ?i3)
+    (?rel rdfs:subPropertyOf time:intervalDisjoint)
+    ->
+    (?i1 ?rel ?i3)
+]
+
+
+# ============================================================================
+# SECTION 3: INSTANT ORDERING RULES
+# ============================================================================
+
+# Instant before is transitive
+[instantBeforeTransitive:
+    (?t1 time:before ?t2)
+    (?t2 time:before ?t3)
+    ->
+    (?t1 time:before ?t3)
+]
+
+# Instant after is transitive  
+[instantAfterTransitive:
+    (?t1 time:after ?t2)
+    (?t2 time:after ?t3)
+    ->
+    (?t1 time:after ?t3)
+]
+
+# Before/after inverse
+[instantBeforeInverse:
+    (?t1 time:before ?t2)
+    ->
+    (?t2 time:after ?t1)
+]
+
+[instantAfterInverse:
+    (?t1 time:after ?t2)
+    ->
+    (?t2 time:before ?t1)
+]
+
+
+# ============================================================================
+# SECTION 4: INTERVAL-INSTANT RELATIONSHIPS
+# ============================================================================
+
+# If interval begins at instant, that instant is before end
+[intervalBeginBeforeEnd:
+    (?i time:hasBeginning ?begin)
+    (?i time:hasEnd ?end)
+    ->
+    (?begin time:before ?end)
+]
+
+# Interval before based on instants
+[intervalBeforeFromInstants:
+    (?i1 time:hasEnd ?e1)
+    (?i2 time:hasBeginning ?b2)
+    (?e1 time:before ?b2)
+    ->
+    (?i1 time:intervalBefore ?i2)
+]
+
+# Interval meets based on instants
+[intervalMeetsFromInstants:
+    (?i1 time:hasEnd ?e1)
+    (?i2 time:hasBeginning ?b2)
+    (?e1 time:equals ?b2)
+    ->
+    (?i1 time:intervalMeets ?i2)
+]
+
+
+# ============================================================================
+# SECTION 5: BRIDGING RULES - PM xsd:date to time:Interval
+# ============================================================================
+# These rules connect the PM ontology's date-based temporal properties
+# to W3C Time Ontology intervals for Allen's algebra reasoning.
+
+# Create time:Interval for tasks with planned dates
+# Note: These create derived intervals for Allen's algebra queries
+# The actual date comparisons should be done in SPARQL for efficiency
+
+# Sprint interval inference
+[sprintIntervalFromDates:
+    (?sprint rdf:type sro:Sprint)
+    (?sprint pm:hasPlannedStart ?start)
+    (?sprint pm:hasPlannedEnd ?end)
+    makeTemp(?interval)
+    ->
+    (?sprint time:hasTime ?interval)
+    (?interval rdf:type time:Interval)
+]
+
+# Task interval inference
+[taskIntervalFromDates:
+    (?task rdf:type pm:Task)
+    (?task pm:hasPlannedStart ?start)
+    (?task pm:hasPlannedEnd ?end)
+    makeTemp(?interval)
+    ->
+    (?task time:hasTime ?interval)
+    (?interval rdf:type time:Interval)
+]
+
+
+# ============================================================================
+# SECTION 6: SCRUM-SPECIFIC TEMPORAL RULES
+# ============================================================================
+
+# Sprint contains story if story dates are within sprint dates
+# This is a simplified rule - full implementation should use SPARQL
+[storyDuringSprint:
+    (?story rdf:type sro:UserStory)
+    (?story sro:isInSprint ?sprint)
+    (?story time:hasTime ?storyInterval)
+    (?sprint time:hasTime ?sprintInterval)
+    ->
+    (?storyInterval time:intervalDuring ?sprintInterval)
+]
+
+# Task within story timeframe
+[taskDuringStory:
+    (?task rdf:type pm:Task)
+    (?task pm:hasParent ?story)
+    (?story rdf:type sro:UserStory)
+    (?task time:hasTime ?taskInterval)
+    (?story time:hasTime ?storyInterval)
+    ->
+    (?taskInterval time:intervalDuring ?storyInterval)
+]
+
+# Sequential sprints (Sprint N meets Sprint N+1)
+[sequentialSprints:
+    (?s1 rdf:type sro:Sprint)
+    (?s2 rdf:type sro:Sprint)
+    (?s1 sro:sprintNumber ?n1)
+    (?s2 sro:sprintNumber ?n2)
+    (?s1 sro:isPartOf ?project)
+    (?s2 sro:isPartOf ?project)
+    sum(?n1, 1, ?n2)
+    (?s1 time:hasTime ?i1)
+    (?s2 time:hasTime ?i2)
+    ->
+    (?i1 time:intervalMeets ?i2)
+]
+
+
+# ============================================================================
+# SECTION 7: DEPENDENCY TEMPORAL CONSTRAINTS
+# ============================================================================
+
+# FinishToStart: predecessor interval before successor interval
+[fsTemporalConstraint:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:linkType pm:FinishToStart)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    (?pred time:hasTime ?predInterval)
+    (?succ time:hasTime ?succInterval)
+    ->
+    (?predInterval time:intervalBefore ?succInterval)
+]
+
+# FinishToStart with meet (no gap)
+[fsMeetsConstraint:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:linkType pm:FinishToStart)
+    (?dep pm:lag ?lag)
+    equal(?lag, "0"^^xsd:decimal)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    (?pred time:hasTime ?predInterval)
+    (?succ time:hasTime ?succInterval)
+    ->
+    (?predInterval time:intervalMeets ?succInterval)
+]
+
+# StartToStart: intervals start together or predecessor starts first
+[ssTemporalConstraint:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:linkType pm:StartToStart)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    (?pred time:hasTime ?predInterval)
+    (?succ time:hasTime ?succInterval)
+    ->
+    (?succInterval time:intervalStartedBy ?predInterval)
+]
+
+
+# ============================================================================
+# SECTION 8: DURATION AND EFFORT CONSISTENCY
+# ============================================================================
+
+# Flag tasks where actual exceeds estimate (for reporting)
+[effortExceedsEstimate:
+    (?task rdf:type pm:Task)
+    (?task pm:estimatedEffort ?est)
+    (?task pm:actualEffort ?act)
+    greaterThan(?act, ?est)
+    ->
+    (?task sro:effortExceeded "true"^^xsd:boolean)
+]
+
+
+# ============================================================================
+# END OF TEMPORAL RULES
+# ============================================================================

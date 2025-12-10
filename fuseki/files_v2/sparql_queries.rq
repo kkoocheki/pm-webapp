@@ -1,0 +1,641 @@
+# ============================================================================
+# SPARQL QUERY EXAMPLES FOR KNOID SCRUM PM ONTOLOGY
+# ============================================================================
+# Version: 2.0.0
+# Date: 2025-11-27
+#
+# Collection of useful SPARQL queries organized by use case.
+# These queries work with the scrum_pm_ontology_v2.ttl and example data.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# COMMON PREFIX DECLARATIONS
+# ----------------------------------------------------------------------------
+# Copy these prefixes at the top of your queries:
+
+PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl:    <http://www.w3.org/2002/07/owl#>
+PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
+PREFIX sro:    <https://www.knoid.io/ontologies/sro#>
+PREFIX pm:     <https://www.knoid.io/ontologies/pm#>
+PREFIX spo:    <https://www.knoid.io/ontologies/spo#>
+PREFIX eo:     <https://www.knoid.io/ontologies/eo#>
+PREFIX rsro:   <https://www.knoid.io/ontologies/rsro#>
+PREFIX ex:     <https://example.knoid.io/projects/>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX time:   <http://www.w3.org/2006/time#>
+
+
+# ============================================================================
+# SECTION 1: PROJECT OVERVIEW QUERIES
+# ============================================================================
+
+# Q1.1: List all Scrum projects with their details
+# ----------------------------------------------------------------------------
+SELECT ?project ?name ?startDate ?endDate ?teamSize
+WHERE {
+    ?project a sro:ScrumProject ;
+             eo:name ?name .
+    OPTIONAL { ?project pm:hasPlannedStart ?startDate }
+    OPTIONAL { ?project pm:hasPlannedEnd ?endDate }
+    OPTIONAL {
+        SELECT ?project (COUNT(DISTINCT ?member) AS ?teamSize)
+        WHERE { ?project sro:hasTeamMember ?member }
+        GROUP BY ?project
+    }
+}
+ORDER BY ?name
+
+
+# Q1.2: Project dashboard summary
+# ----------------------------------------------------------------------------
+SELECT ?project ?name 
+       (COUNT(DISTINCT ?sprint) AS ?totalSprints)
+       (COUNT(DISTINCT ?story) AS ?totalStories)
+       (SUM(?points) AS ?totalPoints)
+WHERE {
+    ?project a sro:ScrumProject ;
+             eo:name ?name .
+    OPTIONAL { ?project sro:hasSprint ?sprint }
+    OPTIONAL { 
+        ?story sro:isInProductBacklog/^sro:hasProductBacklog ?project ;
+               sro:storyPoints ?points .
+    }
+}
+GROUP BY ?project ?name
+
+
+# ============================================================================
+# SECTION 2: SPRINT QUERIES
+# ============================================================================
+
+# Q2.1: Current sprint status with velocity
+# ----------------------------------------------------------------------------
+SELECT ?sprint ?sprintNum ?goal ?startDate ?endDate 
+       (COUNT(?doneStory) AS ?completedStories)
+       (SUM(?donePoints) AS ?velocity)
+       (COUNT(?totalStory) AS ?totalStories)
+WHERE {
+    ?sprint a sro:Sprint ;
+            sro:sprintNumber ?sprintNum .
+    OPTIONAL { ?sprint sro:hasSprintGoal ?goal }
+    OPTIONAL { ?sprint pm:hasPlannedStart ?startDate }
+    OPTIONAL { ?sprint pm:hasPlannedEnd ?endDate }
+    
+    # Total stories in sprint
+    OPTIONAL { ?totalStory sro:isInSprint ?sprint }
+    
+    # Done stories with points
+    OPTIONAL {
+        ?doneStory sro:isInSprint ?sprint ;
+                   sro:hasState sro:Done ;
+                   sro:storyPoints ?donePoints .
+    }
+}
+GROUP BY ?sprint ?sprintNum ?goal ?startDate ?endDate
+ORDER BY ?sprintNum
+
+
+# Q2.2: Sprint burndown data (stories by state)
+# ----------------------------------------------------------------------------
+SELECT ?sprint ?sprintNum ?state (COUNT(?story) AS ?count) (SUM(?points) AS ?totalPoints)
+WHERE {
+    ?sprint a sro:Sprint ;
+            sro:sprintNumber ?sprintNum .
+    ?story sro:isInSprint ?sprint ;
+           sro:hasState ?state .
+    OPTIONAL { ?story sro:storyPoints ?points }
+}
+GROUP BY ?sprint ?sprintNum ?state
+ORDER BY ?sprintNum ?state
+
+
+# Q2.3: Sprint ceremonies schedule
+# ----------------------------------------------------------------------------
+SELECT ?sprint ?sprintNum ?ceremony ?ceremonyType ?date
+WHERE {
+    ?sprint a sro:Sprint ;
+            sro:sprintNumber ?sprintNum ;
+            sro:hasCeremony ?ceremony .
+    ?ceremony a ?ceremonyType .
+    FILTER(?ceremonyType IN (sro:PlanningMeeting, sro:DailyStandupMeeting, 
+                              sro:ReviewMeeting, sro:RetrospectiveMeeting))
+    OPTIONAL { ?ceremony spo:startDate ?date }
+}
+ORDER BY ?sprintNum ?date
+
+
+# ============================================================================
+# SECTION 3: USER STORY QUERIES
+# ============================================================================
+
+# Q3.1: All user stories with their epics and status
+# ----------------------------------------------------------------------------
+SELECT ?story ?storyName ?epicName ?state ?priority ?points ?assignee
+WHERE {
+    ?story a sro:UserStory ;
+           eo:name ?storyName ;
+           sro:hasState ?state .
+    OPTIONAL { 
+        ?story pm:hasParent ?epic .
+        ?epic a sro:Epic ;
+              eo:name ?epicName .
+    }
+    OPTIONAL { ?story sro:hasPriority ?priority }
+    OPTIONAL { ?story sro:storyPoints ?points }
+    OPTIONAL { 
+        ?story pm:assignedTo ?person .
+        ?person eo:name ?assignee .
+    }
+}
+ORDER BY ?epicName ?priority ?storyName
+
+
+# Q3.2: Stories ready for sprint (in backlog, properly refined)
+# ----------------------------------------------------------------------------
+SELECT ?story ?name ?points ?priority ?criteriaCount
+WHERE {
+    ?story a sro:UserStory ;
+           eo:name ?name ;
+           sro:hasState sro:Backlog ;
+           sro:storyPoints ?points ;
+           sro:hasPriority ?priority .
+    
+    # Has acceptance criteria
+    {
+        SELECT ?story (COUNT(?ac) AS ?criteriaCount)
+        WHERE { ?story sro:hasAcceptanceCriterion ?ac }
+        GROUP BY ?story
+        HAVING (COUNT(?ac) >= 1)
+    }
+}
+ORDER BY ?priority DESC(?points)
+
+
+# Q3.3: Stories blocked or at risk
+# ----------------------------------------------------------------------------
+SELECT ?story ?name ?state ?blockerDesc ?sprint
+WHERE {
+    ?story a sro:UserStory ;
+           eo:name ?name ;
+           sro:hasState ?state .
+    
+    {
+        # Explicitly blocked
+        ?story sro:isBlocked true .
+        OPTIONAL {
+            ?story sro:hasImpediment ?imp .
+            ?imp sro:blockerDescription ?blockerDesc .
+        }
+    }
+    UNION
+    {
+        # Has blocked tasks
+        ?story sro:hasTask ?task .
+        ?task sro:hasState sro:Blocked .
+    }
+    
+    OPTIONAL { ?story sro:isInSprint ?sprint }
+}
+
+
+# Q3.4: Story completion with deliverables
+# ----------------------------------------------------------------------------
+SELECT ?story ?name ?deliverable ?accepted ?acceptedBy ?acceptDate
+WHERE {
+    ?deliverable sro:materializes ?story .
+    ?story a sro:UserStory ;
+           eo:name ?name .
+    OPTIONAL { ?deliverable sro:isAccepted ?accepted }
+    OPTIONAL { 
+        ?deliverable sro:acceptedBy ?po .
+        ?po eo:name ?acceptedBy .
+    }
+    OPTIONAL { ?deliverable sro:acceptanceDate ?acceptDate }
+}
+ORDER BY DESC(?acceptDate)
+
+
+# ============================================================================
+# SECTION 4: TASK QUERIES
+# ============================================================================
+
+# Q4.1: All tasks with parent story and assignee
+# ----------------------------------------------------------------------------
+SELECT ?task ?taskName ?storyName ?state ?assignee ?effort ?actualEffort
+WHERE {
+    ?task a pm:Task ;
+          eo:name ?taskName ;
+          sro:hasState ?state .
+    OPTIONAL {
+        ?task pm:hasParent ?story .
+        ?story eo:name ?storyName .
+    }
+    OPTIONAL {
+        ?task pm:assignedTo ?person .
+        ?person eo:name ?assignee .
+    }
+    OPTIONAL { ?task pm:estimatedEffort ?effort }
+    OPTIONAL { ?task pm:actualEffort ?actualEffort }
+}
+ORDER BY ?storyName ?taskName
+
+
+# Q4.2: Task dependencies (Gantt chart data)
+# ----------------------------------------------------------------------------
+SELECT ?task ?taskName ?startDate ?endDate ?duration 
+       ?predTask ?predName ?depType
+WHERE {
+    ?task a pm:Task ;
+          eo:name ?taskName .
+    OPTIONAL { ?task pm:hasPlannedStart ?startDate }
+    OPTIONAL { ?task pm:hasPlannedEnd ?endDate }
+    OPTIONAL { ?task pm:duration ?duration }
+    
+    OPTIONAL {
+        ?dep pm:successor ?task ;
+             pm:predecessor ?predTask ;
+             pm:linkType ?depType .
+        ?predTask eo:name ?predName .
+    }
+}
+ORDER BY ?startDate ?taskName
+
+
+# Q4.3: Tasks by team member with workload
+# ----------------------------------------------------------------------------
+SELECT ?person ?name (COUNT(?task) AS ?taskCount) 
+       (SUM(?est) AS ?totalEstimated) (SUM(?act) AS ?totalActual)
+WHERE {
+    ?task a pm:Task ;
+          pm:assignedTo ?person .
+    ?person eo:name ?name .
+    
+    OPTIONAL { 
+        ?task pm:estimatedEffort ?estDur .
+        BIND(xsd:decimal(REPLACE(STR(?estDur), "^P(\\d+)D$", "$1")) AS ?est)
+    }
+    OPTIONAL { 
+        ?task pm:actualEffort ?actDur .
+        BIND(xsd:decimal(REPLACE(STR(?actDur), "^P(\\d+)D$", "$1")) AS ?act)
+    }
+}
+GROUP BY ?person ?name
+ORDER BY DESC(?taskCount)
+
+
+# Q4.4: Overdue tasks
+# ----------------------------------------------------------------------------
+SELECT ?task ?taskName ?storyName ?plannedEnd ?state ?assignee
+WHERE {
+    ?task a pm:Task ;
+          eo:name ?taskName ;
+          pm:hasPlannedEnd ?plannedEnd ;
+          sro:hasState ?state .
+    
+    FILTER(?plannedEnd < NOW())
+    FILTER(?state NOT IN (sro:Done, sro:Cancelled))
+    
+    OPTIONAL {
+        ?task pm:hasParent ?story .
+        ?story eo:name ?storyName .
+    }
+    OPTIONAL {
+        ?task pm:assignedTo ?person .
+        ?person eo:name ?assignee .
+    }
+}
+ORDER BY ?plannedEnd
+
+
+# ============================================================================
+# SECTION 5: CRITICAL PATH QUERIES
+# ============================================================================
+
+# Q5.1: Critical tasks (zero float)
+# ----------------------------------------------------------------------------
+SELECT ?task ?name ?duration ?earliestStart ?latestStart ?totalFloat
+WHERE {
+    ?task a pm:Task ;
+          eo:name ?name .
+    OPTIONAL { ?task pm:duration ?duration }
+    OPTIONAL { ?task pm:earliestStart ?earliestStart }
+    OPTIONAL { ?task pm:latestStart ?latestStart }
+    OPTIONAL { ?task pm:totalFloat ?totalFloat }
+    
+    FILTER(?totalFloat = 0 || ?task a pm:CriticalTask)
+}
+ORDER BY ?earliestStart
+
+
+# Q5.2: Critical path chain
+# ----------------------------------------------------------------------------
+SELECT ?pred ?predName ?succ ?succName ?depType
+WHERE {
+    ?dep a pm:CriticalDependency ;
+         pm:predecessor ?pred ;
+         pm:successor ?succ ;
+         pm:linkType ?depType .
+    ?pred eo:name ?predName .
+    ?succ eo:name ?succName .
+}
+ORDER BY ?predName
+
+
+# Q5.3: Float analysis for all tasks
+# ----------------------------------------------------------------------------
+SELECT ?task ?name ?totalFloat ?freeFloat 
+       (IF(?totalFloat = 0, "CRITICAL", "Non-critical") AS ?criticality)
+WHERE {
+    ?task a pm:Task ;
+          eo:name ?name .
+    OPTIONAL { ?task pm:totalFloat ?totalFloat }
+    OPTIONAL { ?task pm:freeFloat ?freeFloat }
+}
+ORDER BY ?totalFloat ?name
+
+
+# ============================================================================
+# SECTION 6: TEAM AND ROLE QUERIES
+# ============================================================================
+
+# Q6.1: Team roster with roles
+# ----------------------------------------------------------------------------
+SELECT ?project ?projectName ?member ?memberName ?role ?email
+WHERE {
+    ?project a sro:ScrumProject ;
+             eo:name ?projectName ;
+             sro:hasTeamMember ?member .
+    ?member eo:name ?memberName .
+    OPTIONAL { ?member eo:email ?email }
+    
+    # Determine role from class
+    OPTIONAL {
+        ?member a ?roleClass .
+        FILTER(?roleClass IN (sro:ProductOwner, sro:ScrumMaster, 
+                              sro:Developer, sro:QAEngineer))
+        BIND(REPLACE(STR(?roleClass), ".*#", "") AS ?role)
+    }
+}
+ORDER BY ?projectName ?role ?memberName
+
+
+# Q6.2: Workload by team member per sprint
+# ----------------------------------------------------------------------------
+SELECT ?sprint ?sprintNum ?member ?memberName 
+       (COUNT(?task) AS ?tasks) (SUM(?points) AS ?storyPoints)
+WHERE {
+    ?sprint a sro:Sprint ;
+            sro:sprintNumber ?sprintNum .
+    ?story sro:isInSprint ?sprint ;
+           pm:assignedTo ?member .
+    ?member eo:name ?memberName .
+    
+    OPTIONAL { ?story sro:hasTask ?task }
+    OPTIONAL { ?story sro:storyPoints ?points }
+}
+GROUP BY ?sprint ?sprintNum ?member ?memberName
+ORDER BY ?sprintNum ?memberName
+
+
+# ============================================================================
+# SECTION 7: EPIC AND HIERARCHY QUERIES
+# ============================================================================
+
+# Q7.1: Epic progress summary
+# ----------------------------------------------------------------------------
+SELECT ?epic ?epicName ?totalStories ?doneStories ?totalPoints ?completedPoints
+       ((?doneStories * 100 / ?totalStories) AS ?percentComplete)
+WHERE {
+    {
+        SELECT ?epic (COUNT(?story) AS ?totalStories) (SUM(?points) AS ?totalPoints)
+        WHERE {
+            ?epic a sro:Epic ;
+                  sro:decomposedInto ?story .
+            OPTIONAL { ?story sro:storyPoints ?points }
+        }
+        GROUP BY ?epic
+    }
+    {
+        SELECT ?epic (COUNT(?doneStory) AS ?doneStories) (SUM(?donePoints) AS ?completedPoints)
+        WHERE {
+            ?epic a sro:Epic ;
+                  sro:decomposedInto ?doneStory .
+            ?doneStory sro:hasState sro:Done .
+            OPTIONAL { ?doneStory sro:storyPoints ?donePoints }
+        }
+        GROUP BY ?epic
+    }
+    ?epic eo:name ?epicName .
+}
+ORDER BY DESC(?percentComplete)
+
+
+# Q7.2: Full work breakdown structure
+# ----------------------------------------------------------------------------
+SELECT ?epic ?epicName ?story ?storyName ?task ?taskName ?level
+WHERE {
+    {
+        ?epic a sro:Epic ;
+              eo:name ?epicName .
+        BIND(1 AS ?level)
+        BIND(?epic AS ?item)
+        BIND(?epicName AS ?itemName)
+    }
+    UNION
+    {
+        ?epic a sro:Epic ;
+              eo:name ?epicName ;
+              sro:decomposedInto ?story .
+        ?story eo:name ?storyName .
+        BIND(2 AS ?level)
+    }
+    UNION
+    {
+        ?epic a sro:Epic ;
+              sro:decomposedInto ?story .
+        ?story sro:hasTask ?task .
+        ?task eo:name ?taskName .
+        ?epic eo:name ?epicName .
+        ?story eo:name ?storyName .
+        BIND(3 AS ?level)
+    }
+}
+ORDER BY ?epicName ?storyName ?taskName
+
+
+# ============================================================================
+# SECTION 8: METRICS AND ANALYTICS QUERIES
+# ============================================================================
+
+# Q8.1: Velocity trend by sprint
+# ----------------------------------------------------------------------------
+SELECT ?sprint ?sprintNum 
+       (SUM(?plannedPoints) AS ?committed)
+       (SUM(?completedPoints) AS ?velocity)
+WHERE {
+    ?sprint a sro:Sprint ;
+            sro:sprintNumber ?sprintNum .
+    
+    OPTIONAL {
+        ?story sro:isInSprint ?sprint ;
+               sro:storyPoints ?plannedPoints .
+    }
+    
+    OPTIONAL {
+        ?doneStory sro:isInSprint ?sprint ;
+                   sro:hasState sro:Done ;
+                   sro:storyPoints ?completedPoints .
+    }
+}
+GROUP BY ?sprint ?sprintNum
+ORDER BY ?sprintNum
+
+
+# Q8.2: Cycle time analysis (time from start to done)
+# ----------------------------------------------------------------------------
+SELECT ?story ?name ?startDate ?endDate 
+       (xsd:integer(?endDate - ?startDate) AS ?cycleDays)
+WHERE {
+    ?story a sro:UserStory ;
+           eo:name ?name ;
+           sro:hasState sro:Done ;
+           pm:hasActualStart ?startDate ;
+           pm:hasActualEnd ?endDate .
+}
+ORDER BY DESC(?cycleDays)
+
+
+# Q8.3: Effort variance (estimated vs actual)
+# ----------------------------------------------------------------------------
+SELECT ?task ?name ?estimated ?actual 
+       (?actual - ?estimated AS ?variance)
+       ((?variance * 100 / ?estimated) AS ?variancePercent)
+WHERE {
+    ?task a pm:Task ;
+          eo:name ?name ;
+          pm:duration ?estimated ;
+          pm:actualEffort ?actualDur .
+    
+    # Convert duration to days
+    BIND(xsd:decimal(REPLACE(STR(?actualDur), "^P(\\d+)D$", "$1")) AS ?actual)
+    
+    FILTER(?actual != ?estimated)
+}
+ORDER BY DESC(ABS(?variance))
+
+
+# ============================================================================
+# SECTION 9: INFERENCE VERIFICATION QUERIES
+# ============================================================================
+
+# Q9.1: Verify story state inference (should show inferred Done states)
+# ----------------------------------------------------------------------------
+SELECT ?story ?name ?state ?hasAcceptedDeliverable
+WHERE {
+    ?story a sro:UserStory ;
+           eo:name ?name ;
+           sro:hasState ?state .
+    
+    OPTIONAL {
+        ?deliverable sro:materializes ?story ;
+                     a sro:AcceptedDeliverable .
+        BIND(true AS ?hasAcceptedDeliverable)
+    }
+}
+ORDER BY ?state ?name
+
+
+# Q9.2: Verify dependency inference (reified to direct)
+# ----------------------------------------------------------------------------
+SELECT ?pred ?predName ?succ ?succName ?directLink ?reifiedDep
+WHERE {
+    {
+        # Direct property
+        ?pred pm:finishToStart ?succ .
+        ?pred eo:name ?predName .
+        ?succ eo:name ?succName .
+        BIND(true AS ?directLink)
+    }
+    UNION
+    {
+        # Reified dependency
+        ?dep a pm:Dependency ;
+             pm:linkType pm:FinishToStart ;
+             pm:predecessor ?pred ;
+             pm:successor ?succ .
+        ?pred eo:name ?predName .
+        ?succ eo:name ?succName .
+        BIND(true AS ?reifiedDep)
+    }
+}
+
+
+# Q9.3: Verify blocked task inference
+# ----------------------------------------------------------------------------
+SELECT ?task ?name ?isBlocked ?blockedBy ?predState
+WHERE {
+    ?task a pm:Task ;
+          eo:name ?name .
+    OPTIONAL { ?task sro:isBlocked ?isBlocked }
+    OPTIONAL {
+        ?dep pm:successor ?task ;
+             pm:predecessor ?pred .
+        ?pred eo:name ?blockedBy ;
+              sro:hasState ?predState .
+    }
+}
+ORDER BY DESC(?isBlocked)
+
+
+# ============================================================================
+# SECTION 10: CONSTRUCT QUERIES (for data transformation)
+# ============================================================================
+
+# Q10.1: Generate Gantt chart JSON-LD structure
+# ----------------------------------------------------------------------------
+CONSTRUCT {
+    ?task a pm:Task ;
+          eo:name ?name ;
+          pm:hasPlannedStart ?start ;
+          pm:hasPlannedEnd ?end ;
+          pm:duration ?duration ;
+          pm:finishToStart ?successor .
+}
+WHERE {
+    ?task a pm:Task ;
+          eo:name ?name .
+    OPTIONAL { ?task pm:hasPlannedStart ?start }
+    OPTIONAL { ?task pm:hasPlannedEnd ?end }
+    OPTIONAL { ?task pm:duration ?duration }
+    OPTIONAL { ?task pm:finishToStart ?successor }
+}
+
+
+# Q10.2: Export sprint data for reporting
+# ----------------------------------------------------------------------------
+CONSTRUCT {
+    ?sprint a sro:Sprint ;
+            sro:sprintNumber ?num ;
+            sro:hasSprintGoal ?goal ;
+            sro:contains ?story .
+    ?story eo:name ?storyName ;
+           sro:storyPoints ?points ;
+           sro:hasState ?state .
+}
+WHERE {
+    ?sprint a sro:Sprint ;
+            sro:sprintNumber ?num .
+    OPTIONAL { ?sprint sro:hasSprintGoal ?goal }
+    
+    ?story sro:isInSprint ?sprint ;
+           eo:name ?storyName ;
+           sro:hasState ?state .
+    OPTIONAL { ?story sro:storyPoints ?points }
+}
+
+
+# ============================================================================
+# END OF SPARQL QUERY EXAMPLES
+# ============================================================================

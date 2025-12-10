@@ -5,10 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, Maximize2, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 import { useCriticalPath } from '@/lib/hooks/use-advanced-features';
-import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
+import { useUIStore } from '@/lib/stores/app-store';
 
 export default function DependenciesPage() {
-  const { data: criticalPath, isLoading, error, refetch } = useCriticalPath(DEFAULT_PROJECT_SLUG);
+  // Get current project from Zustand store
+  const currentProjectSlug = useUIStore((state) => state.currentProjectSlug);
+  
+  const { data: criticalPath, isLoading, error, refetch } = useCriticalPath(currentProjectSlug);
 
   const criticalTasks = criticalPath?.critical_path || [];
   const criticalCount = criticalTasks.filter(t => t.is_critical).length;

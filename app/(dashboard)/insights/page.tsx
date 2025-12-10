@@ -11,22 +11,25 @@ import {
   useUserStoryStatus,
   useReasoningHealth
 } from '@/lib/hooks/use-advanced-features';
-import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
+import { useUIStore } from '@/lib/stores/app-store';
 import { useState } from 'react';
 
 export default function InsightsPage() {
+  // Get current project from Zustand store
+  const currentProjectSlug = useUIStore((state) => state.currentProjectSlug);
+  
   const [reasonerType, setReasonerType] = useState<'rdfs' | 'owl_dl' | 'owl_full' | 'jena_rules' | 'combined'>('combined');
 
   const applyReasoningMutation = useApplyReasoning();
-  const { data: taskStatus, isLoading: tasksLoading, refetch: refetchTasks } = useTaskStatus(DEFAULT_PROJECT_SLUG);
-  const { data: storyStatus, isLoading: storiesLoading, refetch: refetchStories } = useUserStoryStatus(DEFAULT_PROJECT_SLUG);
+  const { data: taskStatus, isLoading: tasksLoading, refetch: refetchTasks } = useTaskStatus(currentProjectSlug);
+  const { data: storyStatus, isLoading: storiesLoading, refetch: refetchStories } = useUserStoryStatus(currentProjectSlug);
   const { data: rules, isLoading: rulesLoading } = useInferenceRules();
   const { data: health } = useReasoningHealth();
 
   const handleRunReasoning = async () => {
     try {
       await applyReasoningMutation.mutateAsync({
-        project_slug: DEFAULT_PROJECT_SLUG,
+        project_slug: currentProjectSlug,
         reasoner_type: reasonerType,
       });
       // Refetch insights after reasoning

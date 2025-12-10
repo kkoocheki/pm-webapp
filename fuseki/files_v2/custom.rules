@@ -1,0 +1,574 @@
+# ============================================================================
+# CUSTOM INFERENCE RULES FOR SCRUM PROJECT MANAGEMENT
+# ============================================================================
+# Version: 2.0.0
+# Date: 2025-11-27
+# 
+# These rules work with Apache Jena's rule engine and complement the OWL
+# axioms defined in scrum_pm_ontology_v2.ttl
+#
+# Rule naming convention:
+#   - Category prefix (Story, Task, Sprint, Epic, CPM, Blocked, etc.)
+#   - Descriptive name
+#
+# Notes:
+#   - Rules fire in order of specificity
+#   - noValue() checks that no triple exists
+#   - notEqual(), equal(), greaterThan(), lessThan() are built-in comparators
+#   - makeTemp() creates temporary bnode URIs
+# ============================================================================
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix sro:    <https://www.knoid.io/ontologies/sro#> .
+@prefix pm:     <https://www.knoid.io/ontologies/pm#> .
+@prefix spo:    <https://www.knoid.io/ontologies/spo#> .
+@prefix eo:     <https://www.knoid.io/ontologies/eo#> .
+
+
+# ============================================================================
+# SECTION 1: STORY COMPLETION INFERENCE
+# ============================================================================
+
+# Story is Done if it has an AcceptedDeliverable that materializes it
+[StoryDoneFromDeliverable:
+    (?deliverable rdf:type sro:AcceptedDeliverable)
+    (?deliverable sro:materializes ?story)
+    (?story rdf:type sro:UserStory)
+    ->
+    (?story sro:hasState sro:Done)
+    (?story sro:isDone "true"^^xsd:boolean)
+]
+
+# Story is Done if its state is explicitly Done
+[StoryDoneFromState:
+    (?story rdf:type sro:UserStory)
+    (?story sro:hasState sro:Done)
+    ->
+    (?story sro:isDone "true"^^xsd:boolean)
+]
+
+# Mark deliverable as accepted if isAccepted = true
+[DeliverableAcceptedFromFlag:
+    (?deliverable rdf:type sro:Deliverable)
+    (?deliverable sro:isAccepted "true"^^xsd:boolean)
+    ->
+    (?deliverable rdf:type sro:AcceptedDeliverable)
+]
+
+# Story InProgress if any task is InProgress and story not Done
+[StoryInProgressFromTask:
+    (?story rdf:type sro:UserStory)
+    (?story sro:hasTask ?task)
+    (?task sro:hasState sro:InProgress)
+    noValue(?story sro:hasState sro:Done)
+    ->
+    (?story sro:hasState sro:InProgress)
+]
+
+# Story InReview if any task is InReview and no tasks InProgress
+[StoryInReviewFromTask:
+    (?story rdf:type sro:UserStory)
+    (?story sro:hasTask ?task)
+    (?task sro:hasState sro:InReview)
+    noValue(?story sro:hasState sro:Done)
+    noValue(?story sro:hasState sro:InProgress)
+    ->
+    (?story sro:hasState sro:InReview)
+]
+
+
+# ============================================================================
+# SECTION 2: EPIC PROGRESS INFERENCE
+# ============================================================================
+
+# Epic is InProgress if any child story is InProgress
+[EpicInProgressFromStory:
+    (?epic rdf:type sro:Epic)
+    (?epic sro:decomposedInto ?story)
+    (?story sro:hasState sro:InProgress)
+    noValue(?epic sro:hasState sro:Done)
+    ->
+    (?epic sro:hasState sro:InProgress)
+]
+
+# Epic is InReview if any child story is InReview and none InProgress
+[EpicInReviewFromStory:
+    (?epic rdf:type sro:Epic)
+    (?epic sro:decomposedInto ?story)
+    (?story sro:hasState sro:InReview)
+    noValue(?epic sro:hasState sro:Done)
+    noValue(?epic sro:hasState sro:InProgress)
+    ->
+    (?epic sro:hasState sro:InReview)
+]
+
+# Epic is Done if ALL child stories are Done
+# Note: This is complex in Jena rules - we approximate with deliverable check
+[EpicDoneFromDeliverable:
+    (?epic rdf:type sro:Epic)
+    (?deliverable sro:materializes ?epic)
+    (?deliverable rdf:type sro:AcceptedDeliverable)
+    ->
+    (?epic sro:hasState sro:Done)
+    (?epic sro:isDone "true"^^xsd:boolean)
+]
+
+
+# ============================================================================
+# SECTION 3: TASK STATE INFERENCE
+# ============================================================================
+
+# Task is Done if parent story is Done (cascade down)
+[TaskDoneFromStory:
+    (?task rdf:type pm:Task)
+    (?task pm:hasParent ?story)
+    (?story rdf:type sro:UserStory)
+    (?story sro:hasState sro:Done)
+    ->
+    (?task sro:hasState sro:Done)
+]
+
+# Task with 100% complete is Done
+[TaskDoneFromPercent:
+    (?task rdf:type pm:Task)
+    (?task pm:percentComplete ?pct)
+    ge(?pct, 100)
+    ->
+    (?task sro:hasState sro:Done)
+]
+
+# Task with actual end date and no remaining effort is Done
+[TaskDoneFromActualEnd:
+    (?task rdf:type pm:Task)
+    (?task pm:hasActualEnd ?endDate)
+    noValue(?task pm:remainingEffort)
+    ->
+    (?task sro:hasState sro:Done)
+]
+
+
+# ============================================================================
+# SECTION 4: BLOCKED/IMPEDIMENT INFERENCE
+# ============================================================================
+
+# Task is blocked if predecessor is not Done (FinishToStart dependency)
+[TaskBlockedByPredecessor:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:linkType pm:FinishToStart)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?task)
+    (?pred sro:hasState ?predState)
+    notEqual(?predState, sro:Done)
+    (?task sro:hasState sro:ToDo)
+    ->
+    (?task sro:isBlocked "true"^^xsd:boolean)
+    (?task sro:hasState sro:Blocked)
+]
+
+# Direct dependency shorthand - blocked check
+[TaskBlockedByFSDirect:
+    (?pred pm:finishToStart ?task)
+    (?pred sro:hasState ?predState)
+    notEqual(?predState, sro:Done)
+    (?task sro:hasState sro:ToDo)
+    ->
+    (?task sro:isBlocked "true"^^xsd:boolean)
+]
+
+# Task blocked by explicit impediment
+[TaskBlockedByImpediment:
+    (?task rdf:type pm:Task)
+    (?task sro:hasImpediment ?impediment)
+    noValue(?impediment sro:blockerResolvedDate)
+    ->
+    (?task sro:isBlocked "true"^^xsd:boolean)
+    (?task sro:hasState sro:Blocked)
+]
+
+# Story blocked if any task is blocked
+[StoryBlockedFromTask:
+    (?story rdf:type sro:UserStory)
+    (?story sro:hasTask ?task)
+    (?task sro:isBlocked "true"^^xsd:boolean)
+    ->
+    (?story sro:isBlocked "true"^^xsd:boolean)
+]
+
+
+# ============================================================================
+# SECTION 5: SPRINT CONTEXT INFERENCE
+# ============================================================================
+
+# Task inherits sprint from parent story
+[TaskInSprintFromStory:
+    (?task rdf:type pm:Task)
+    (?task pm:hasParent ?story)
+    (?story sro:isInSprint ?sprint)
+    ->
+    (?task sro:isInSprint ?sprint)
+]
+
+# Story in sprint backlog implies it's in that sprint
+[StorySprintFromBacklog:
+    (?story rdf:type sro:UserStory)
+    (?story sro:isInSprintBacklog ?backlog)
+    (?sprint sro:hasSprintBacklog ?backlog)
+    ->
+    (?story sro:isInSprint ?sprint)
+]
+
+# Connect sprint backlog contains to story isInSprintBacklog
+[SprintBacklogContainsInverse:
+    (?backlog rdf:type sro:SprintBacklog)
+    (?backlog sro:contains ?story)
+    ->
+    (?story sro:isInSprintBacklog ?backlog)
+]
+
+# Story in product backlog inverse
+[ProductBacklogContainsInverse:
+    (?backlog rdf:type sro:ProductBacklog)
+    (?backlog sro:contains ?story)
+    ->
+    (?story sro:isInProductBacklog ?backlog)
+]
+
+
+# ============================================================================
+# SECTION 6: HIERARCHY AND PARENT-CHILD INFERENCE
+# ============================================================================
+
+# hasTask inverse of hasParent for stories
+[HasTaskInverse:
+    (?task rdf:type pm:Task)
+    (?task pm:hasParent ?story)
+    (?story rdf:type sro:UserStory)
+    ->
+    (?story sro:hasTask ?task)
+]
+
+# decomposedInto inverse of hasParent for epics
+[DecomposedIntoInverse:
+    (?story rdf:type sro:UserStory)
+    (?story pm:hasParent ?epic)
+    (?epic rdf:type sro:Epic)
+    ->
+    (?epic sro:decomposedInto ?story)
+]
+
+# Transitive parent chain - task's project is story's sprint's project
+[TaskProjectFromStory:
+    (?task rdf:type pm:Task)
+    (?task pm:hasParent ?story)
+    (?story sro:isInSprint ?sprint)
+    (?sprint sro:isPartOf ?project)
+    ->
+    (?task pm:project ?project)
+]
+
+
+# ============================================================================
+# SECTION 7: CRITICAL PATH METHOD (CPM) INFERENCE
+# ============================================================================
+
+# Task is critical if totalFloat = 0
+[CriticalTaskFromFloat:
+    (?task rdf:type pm:Task)
+    (?task pm:totalFloat ?float)
+    equal(?float, "0"^^xsd:decimal)
+    ->
+    (?task rdf:type pm:CriticalTask)
+    (?task pm:isCritical "true"^^xsd:boolean)
+]
+
+# Task is non-critical if totalFloat > 0
+[NonCriticalTaskFromFloat:
+    (?task rdf:type pm:Task)
+    (?task pm:totalFloat ?float)
+    greaterThan(?float, "0"^^xsd:decimal)
+    ->
+    (?task rdf:type pm:NonCriticalTask)
+    (?task pm:isCritical "false"^^xsd:boolean)
+]
+
+# Dependency is critical if both endpoints are critical
+[CriticalDependencyFromTasks:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    (?pred rdf:type pm:CriticalTask)
+    (?succ rdf:type pm:CriticalTask)
+    ->
+    (?dep rdf:type pm:CriticalDependency)
+]
+
+# Task is milestone if duration = 0
+[MilestoneFromDuration:
+    (?task rdf:type pm:Task)
+    (?task pm:duration ?dur)
+    equal(?dur, "0"^^xsd:decimal)
+    ->
+    (?task rdf:type pm:Milestone)
+]
+
+# Calculate earliest finish from earliest start + duration
+# Note: Jena rules can do arithmetic with sum()
+[EarliestFinishCalc:
+    (?task rdf:type pm:Task)
+    (?task pm:earliestStart ?es)
+    (?task pm:duration ?dur)
+    sum(?es, ?dur, ?ef)
+    ->
+    (?task pm:earliestFinish ?ef)
+]
+
+# Calculate total float from latest start - earliest start
+[TotalFloatCalc:
+    (?task rdf:type pm:Task)
+    (?task pm:latestStart ?ls)
+    (?task pm:earliestStart ?es)
+    difference(?ls, ?es, ?float)
+    ->
+    (?task pm:totalFloat ?float)
+]
+
+
+# ============================================================================
+# SECTION 8: DEPENDENCY INFERENCE FROM REIFIED TO DIRECT
+# ============================================================================
+
+# Infer direct pm:precedes from reified dependency
+[PrecedesFromReified:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    ->
+    (?pred pm:precedes ?succ)
+    (?succ pm:dependsOn ?pred)
+]
+
+# Infer direct finishToStart from reified FS dependency
+[FinishToStartFromReified:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:linkType pm:FinishToStart)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    ->
+    (?pred pm:finishToStart ?succ)
+]
+
+# Infer direct startToStart from reified SS dependency
+[StartToStartFromReified:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:linkType pm:StartToStart)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    ->
+    (?pred pm:startToStart ?succ)
+]
+
+# Infer direct finishToFinish from reified FF dependency
+[FinishToFinishFromReified:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:linkType pm:FinishToFinish)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    ->
+    (?pred pm:finishToFinish ?succ)
+]
+
+# Infer direct startToFinish from reified SF dependency
+[StartToFinishFromReified:
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:linkType pm:StartToFinish)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    ->
+    (?pred pm:startToFinish ?succ)
+]
+
+
+# ============================================================================
+# SECTION 9: REIFIED DEPENDENCY FROM DIRECT (REVERSE)
+# ============================================================================
+
+# Create reified dependency from direct finishToStart
+# Note: This uses makeTemp to create unique bnode for each edge
+[ReifiedFromFinishToStart:
+    (?pred pm:finishToStart ?succ)
+    noValue(?dep pm:predecessor ?pred)
+    noValue(?dep pm:successor ?succ)
+    makeTemp(?dep)
+    ->
+    (?dep rdf:type pm:Dependency)
+    (?dep pm:predecessor ?pred)
+    (?dep pm:successor ?succ)
+    (?dep pm:linkType pm:FinishToStart)
+    (?pred pm:hasOutgoingDependency ?dep)
+    (?succ pm:hasIncomingDependency ?dep)
+]
+
+
+# ============================================================================
+# SECTION 10: ASSIGNMENT AND WORKLOAD INFERENCE
+# ============================================================================
+
+# Task assigned to same person as parent story (default assignment)
+[TaskAssignmentFromStory:
+    (?task rdf:type pm:Task)
+    (?task pm:hasParent ?story)
+    (?story pm:assignedTo ?person)
+    noValue(?task pm:assignedTo)
+    ->
+    (?task pm:assignedTo ?person)
+]
+
+# Person participates in project if assigned to any task in it
+[PersonParticipatesFromTask:
+    (?person rdf:type sro:ScrumTeamMember)
+    (?task pm:assignedTo ?person)
+    (?task pm:project ?project)
+    ->
+    (?person spo:participatesIn ?project)
+]
+
+
+# ============================================================================
+# SECTION 11: ACCEPTANCE CRITERIA INFERENCE
+# ============================================================================
+
+# Story has unmet criteria if any AC is not satisfied
+# Note: This requires explicit tracking of AC satisfaction
+[StoryHasUnmetCriteria:
+    (?story rdf:type sro:UserStory)
+    (?story sro:hasAcceptanceCriterion ?ac)
+    noValue(?ac sro:isSatisfied "true"^^xsd:boolean)
+    ->
+    (?story sro:hasUnmetCriteria "true"^^xsd:boolean)
+]
+
+
+# ============================================================================
+# SECTION 12: RISK AND IMPEDIMENT ESCALATION
+# ============================================================================
+
+# Sprint has impediments if any story in it is blocked
+[SprintHasImpediments:
+    (?sprint rdf:type sro:Sprint)
+    (?story sro:isInSprint ?sprint)
+    (?story sro:isBlocked "true"^^xsd:boolean)
+    ->
+    (?sprint sro:hasBlockedItems "true"^^xsd:boolean)
+]
+
+# Project has critical risk if any risk is Critical level
+[ProjectHasCriticalRisk:
+    (?project rdf:type sro:ScrumProject)
+    (?project sro:hasRisk ?risk)
+    (?risk sro:hasRiskLevel sro:RiskCritical)
+    ->
+    (?project sro:hasCriticalRisk "true"^^xsd:boolean)
+]
+
+
+# ============================================================================
+# SECTION 13: TEAM MEMBERSHIP INFERENCE
+# ============================================================================
+
+# Team member participates in project if they're in the team
+[TeamMemberParticipates:
+    (?project rdf:type sro:ScrumProject)
+    (?project sro:hasTeamMember ?member)
+    ->
+    (?member spo:participatesIn ?project)
+    (?project spo:hasStakeholder ?member)
+]
+
+# Scrum role inference from class type
+[ProductOwnerHasRole:
+    (?person rdf:type sro:ProductOwner)
+    ->
+    (?person eo:playsRole sro:ProductOwnerRole)
+]
+
+[ScrumMasterHasRole:
+    (?person rdf:type sro:ScrumMaster)
+    ->
+    (?person eo:playsRole sro:ScrumMasterRole)
+]
+
+[DeveloperHasRole:
+    (?person rdf:type sro:Developer)
+    ->
+    (?person eo:playsRole sro:DeveloperRole)
+]
+
+
+# ============================================================================
+# SECTION 14: VELOCITY AND METRICS HELPERS
+# ============================================================================
+
+# Story contributes to sprint velocity if Done
+[StoryContributesToVelocity:
+    (?story rdf:type sro:UserStory)
+    (?story sro:hasState sro:Done)
+    (?story sro:isInSprint ?sprint)
+    (?story sro:storyPoints ?points)
+    ->
+    (?story sro:contributesToVelocity ?sprint)
+]
+
+
+# ============================================================================
+# SECTION 15: LABEL AND TYPE HELPERS
+# ============================================================================
+
+# UserStory with decomposedInto is an Epic
+[EpicFromDecomposition:
+    (?story rdf:type sro:UserStory)
+    (?story sro:decomposedInto ?child)
+    ->
+    (?story rdf:type sro:Epic)
+]
+
+# UserStory with no decomposition and is not decomposed from anything is Atomic
+[AtomicStoryDetection:
+    (?story rdf:type sro:UserStory)
+    noValue(?story sro:decomposedInto)
+    noValue(?epic sro:decomposedInto ?story)
+    ->
+    (?story rdf:type sro:AtomicUserStory)
+]
+
+
+# ============================================================================
+# SECTION 16: DATE CONSISTENCY CHECKS (for validation)
+# ============================================================================
+
+# Flag if actual start is before planned start (early start)
+[EarlyStartDetection:
+    (?task rdf:type pm:Task)
+    (?task pm:hasPlannedStart ?planned)
+    (?task pm:hasActualStart ?actual)
+    lessThan(?actual, ?planned)
+    ->
+    (?task sro:startedEarly "true"^^xsd:boolean)
+]
+
+# Flag if actual end is after planned end (late finish)
+[LateFinishDetection:
+    (?task rdf:type pm:Task)
+    (?task pm:hasPlannedEnd ?planned)
+    (?task pm:hasActualEnd ?actual)
+    greaterThan(?actual, ?planned)
+    ->
+    (?task sro:finishedLate "true"^^xsd:boolean)
+]
+
+
+# ============================================================================
+# END OF CUSTOM RULES
+# ============================================================================

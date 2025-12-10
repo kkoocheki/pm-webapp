@@ -11,17 +11,20 @@ import { getColumns } from './components/columns';
 import { DataTable } from './components/data-table';
 import { useProjectData, useDeleteTask } from '@/lib/hooks/use-project-data';
 import { tasksToTableFormat } from '@/lib/adapters/table-adapter';
-import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
+import { useUIStore } from '@/lib/stores/app-store';
 import { TaskEditDialog } from '@/components/task-edit-dialog';
 import { Task } from '@/lib/api/types';
 
 export default function IssuesPage() {
+  // Get current project from Zustand store
+  const currentProjectSlug = useUIStore((state) => state.currentProjectSlug);
+  
   // Get tasks directly from React Query cache
-  const { data, isLoading } = useProjectData(DEFAULT_PROJECT_SLUG);
+  const { data, isLoading } = useProjectData(currentProjectSlug);
   const rdfTasks = data?.tasks || [];
   const tasks = tasksToTableFormat(rdfTasks);
   
-  const deleteTaskMutation = useDeleteTask(DEFAULT_PROJECT_SLUG);
+  const deleteTaskMutation = useDeleteTask(currentProjectSlug);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);

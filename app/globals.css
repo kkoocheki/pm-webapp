@@ -123,95 +123,283 @@
 
 /* Gantt chart wrapper - exact pattern from GanttMultiple demo */
 .gantt-cell {
-  height: 600px;
+  height: 800px;
   width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
 .gantt-box {
   overflow: hidden;
   flex: 1;
   min-height: 0; /* Prevents flex child from overflowing */
+  min-width: 0; /* Prevents flex child from overflowing horizontally */
+  max-width: 100%;
 }
 
 /* Ensure Willow wrapper fills container */
 .gantt-box > div {
   height: 100%;
   width: 100%;
+  max-width: 100%;
+}
+
+/* Gantt container for the component */
+.gantt-container {
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  position: relative;
+  contain: layout;
+}
+
+.gantt-container > div {
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Ensure Willow theme container respects bounds */
+.wx-willow-theme {
+  max-width: 100%;
+  overflow: hidden;
+  contain: layout;
+}
+
+/* Apply Willow light theme styles */
+.wx-willow-theme {
+  color-scheme: light;
+
+  /* Match page theme colors */
+  --wx-background: oklch(var(--background));
+  --wx-color-font: oklch(var(--foreground));
+  --wx-border: 1px solid oklch(var(--border));
+
+  /* Grid and headers */
+  --wx-grid-header-background: oklch(var(--card));
+  --wx-grid-header-font-color: oklch(var(--foreground));
+  --wx-grid-body-font-color: oklch(var(--foreground));
+  --wx-grid-body-row-border: 1px solid oklch(var(--border));
+  --wx-grid-body-cell-border: 1px solid transparent;
+
+  /* Timescale */
+  --wx-timescale-background: oklch(var(--card));
+  --wx-timescale-font-color: oklch(var(--muted-foreground));
+  --wx-timescale-border: 1px solid oklch(var(--border));
+
+  /* Task bars - consistent blue across themes */
+  --wx-gantt-task-color: #2196f3;
+  --wx-gantt-task-font-color: white;
+  --wx-gantt-task-fill-color: #1976d2;
+  --wx-gantt-task-border-color: #1976d2;
+  --wx-gantt-task-border: 1px solid transparent;
+
+  /* Project/Epic bars - consistent teal/green */
+  --wx-gantt-project-color: #26a69a;
+  --wx-gantt-project-font-color: white;
+  --wx-gantt-project-fill-color: #00897b;
+  --wx-gantt-project-border-color: #00897b;
+  --wx-gantt-project-border: 1px solid transparent;
+
+  /* Summary/UserStory bars - consistent purple */
+  --wx-gantt-summary-color: #ab47bc;
+  --wx-gantt-summary-font-color: white;
+  --wx-gantt-summary-fill-color: #8e24aa;
+  --wx-gantt-summary-border-color: #8e24aa;
+  --wx-gantt-summary-border: 1px solid transparent;
+
+  /* Milestones - consistent purple */
+  --wx-gantt-milestone-color: #ab47bc;
+
+  /* Selection */
+  --wx-gantt-select-color: oklch(var(--accent));
+
+  /* Links */
+  --wx-gantt-link-color: oklch(var(--muted-foreground));
+  --wx-gantt-link-marker-background: oklch(var(--card));
+  --wx-gantt-link-marker-color: oklch(var(--muted-foreground));
+
+  /* Tooltips */
+  --wx-tooltip-background: oklch(var(--popover));
+  --wx-tooltip-font-color: oklch(var(--popover-foreground));
+
+  /* Shadows */
+  --wx-gantt-bar-shadow: 0px 1px 2px rgba(0, 0, 0, 0.06), 0px 3px 10px rgba(0, 0, 0, 0.12);
 }
 
 /* Apply WillowDark theme styles when in dark mode */
 .dark .wx-willow-theme {
   color-scheme: dark;
 
-  --wx-gantt-border: var(--wx-border);
-  --wx-gantt-form-header-border: none;
-  --wx-gantt-icon-color: #9fa1ae;
+  /* Match page theme colors */
+  --wx-background: oklch(var(--background));
+  --wx-color-font: oklch(var(--foreground));
+  --wx-border: 1px solid oklch(var(--border));
 
-  /* bars */
-  --wx-gantt-bar-font: var(--wx-font-weight) var(--wx-font-size) var(--wx-font-family);
-  --wx-gantt-bar-border-radius: 3px;
-  --wx-gantt-milestone-border-radius: 3px;
+  /* Grid and headers */
+  --wx-grid-header-background: oklch(var(--card));
+  --wx-grid-header-font-color: oklch(var(--foreground));
+  --wx-grid-body-font-color: oklch(var(--foreground));
+  --wx-grid-body-row-border: 1px solid oklch(var(--border));
+  --wx-grid-body-cell-border: 1px solid transparent;
 
-  --wx-gantt-task-color: #37a9ef;
+  /* Timescale */
+  --wx-timescale-background: oklch(var(--card));
+  --wx-timescale-font-color: oklch(var(--muted-foreground));
+  --wx-timescale-border: 1px solid oklch(var(--border));
+
+  /* Task bars - brighter blue for dark mode (same hue as light) */
+  --wx-gantt-task-color: #42a5f5;
   --wx-gantt-task-font-color: #ffffffe5;
-  --wx-gantt-task-fill-color: #098cdc;
-  --wx-gantt-task-border-color: #098cdc;
+  --wx-gantt-task-fill-color: #1e88e5;
+  --wx-gantt-task-border-color: #1e88e5;
   --wx-gantt-task-border: 1px solid transparent;
 
-  --wx-gantt-project-color: #00ba94;
+  /* Project/Epic bars - brighter teal/green (same hue as light) */
+  --wx-gantt-project-color: #26a69a;
   --wx-gantt-project-font-color: #ffffffe5;
-  --wx-gantt-project-fill-color: #099f81;
-  --wx-gantt-project-border-color: #099f81;
+  --wx-gantt-project-fill-color: #00897b;
+  --wx-gantt-project-border-color: #00897b;
   --wx-gantt-project-border: 1px solid transparent;
 
-  --wx-gantt-progress-marker-height: 26px;
-  --wx-gantt-progress-border-color: #4b5359;
+  /* Summary/UserStory bars - brighter purple (same hue as light) */
+  --wx-gantt-summary-color: #ba68c8;
+  --wx-gantt-summary-font-color: #ffffffe5;
+  --wx-gantt-summary-fill-color: #9c27b0;
+  --wx-gantt-summary-border-color: #9c27b0;
+  --wx-gantt-summary-border: 1px solid transparent;
 
-  --wx-gantt-bar-shadow: 0px 1px 2px rgba(44, 47, 60, 0.06), 0px 3px 10px rgba(44, 47, 60, 0.12);
+  /* Milestones - bright purple (same hue as light) */
+  --wx-gantt-milestone-color: #ba68c8;
 
-  --wx-gantt-milestone-color: #ad44ab;
-
+  /* Selection */
   --wx-gantt-select-color: #384047;
+
+  /* Links */
   --wx-gantt-link-color: #9fa1ae;
   --wx-gantt-link-marker-background: #384047;
   --wx-gantt-link-marker-color: #9fa1ae;
 
-  /* grid */
-  --wx-grid-header-font: var(--wx-font-weight-md) var(--wx-font-size) var(--wx-font-family);
-  --wx-grid-header-font-color: var(--wx-color-font);
-  --wx-grid-header-text-transform: capitalize;
-  --wx-grid-header-shadow: none;
+  /* Tooltips */
+  --wx-tooltip-background: oklch(var(--popover));
+  --wx-tooltip-font-color: oklch(var(--popover-foreground));
 
-  --wx-grid-body-font: var(--wx-font-weight) var(--wx-font-size) var(--wx-font-family);
-  --wx-grid-body-font-color: var(--wx-color-font);
-  --wx-grid-body-row-border: var(--wx-border);
-  --wx-grid-body-cell-border: 1px solid transparent;
-
-  /* timescale */
-  --wx-timescale-font: var(--wx-font-weight-md) var(--wx-font-size-sm) var(--wx-font-family);
-  --wx-timescale-font-color: var(--wx-color-font);
-  --wx-timescale-text-transform: uppercase;
-  --wx-timescale-shadow: none;
-  --wx-timescale-border: var(--wx-border);
-
-  /* grid and timescale */
+  /* Holidays */
   --wx-gantt-holiday-background: #303539;
   --wx-gantt-holiday-color: #878994;
 
-  /* markers */
-  --wx-gantt-marker-font: var(--wx-font-weight-md) var(--wx-font-size-sm) var(--wx-font-family);
-  --wx-gantt-marker-font-color: #fff;
-  --wx-gantt-marker-color: rgba(6, 189, 248, 0.77);
+  /* Shadows - softer for dark mode */
+  --wx-gantt-bar-shadow: 0px 1px 2px rgba(44, 47, 60, 0.06), 0px 3px 10px rgba(44, 47, 60, 0.12);
 
-  /* tooltips */
-  --wx-tooltip-font: var(--wx-font-weight) var(--wx-font-size) var(--wx-font-family);
-  --wx-tooltip-font-color: #e6e6e6;
-  --wx-tooltip-background: #4f525a;
+  /* Icons */
+  --wx-gantt-icon-color: #9fa1ae;
 
-  /* sidebar */
-  --wx-sidebar-close-icon: #384047;
+  /* Progress markers */
+  --wx-gantt-progress-marker-height: 26px;
+  --wx-gantt-progress-border-color: #4b5359;
+}
+
+/* Ensure the gantt chart doesn't cause horizontal overflow */
+.wx-gantt,
+.wx-gantt-chart,
+.wx-grid,
+.wx-gantt-layout,
+.wx-layout {
+  max-width: 100% !important;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+
+/* Prevent the chart from expanding the container */
+.wx-layout-content,
+.wx-gantt-content {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Ensure grid cells don't overflow */
+.wx-grid-cell,
+.wx-gantt-row {
+  box-sizing: border-box;
+}
+
+/* Editor/Dialog styling fixes - targeting SVAR Gantt editor specifically */
+.wx-sidearea,
+.wx-gantt-editor,
+.wx-editor,
+.wx-portal {
+  background-color: oklch(var(--popover)) !important;
+  border: 1px solid oklch(var(--border)) !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+}
+
+.wx-sidearea *,
+.wx-gantt-editor *,
+.wx-editor *,
+.wx-portal * {
+  background-color: oklch(var(--popover)) !important;
+}
+
+.wx-sidearea .wx-material-theme,
+.wx-sidearea .wx-willow-theme,
+.wx-gantt-editor .wx-material-theme,
+.wx-gantt-editor .wx-willow-theme,
+.wx-editor .wx-material-theme,
+.wx-editor .wx-willow-theme {
+  background-color: oklch(var(--popover)) !important;
+}
+
+.wx-sidearea .wx-fieldset,
+.wx-sidearea .wx-layout,
+.wx-sidearea .wx-content,
+.wx-gantt-editor .wx-fieldset,
+.wx-gantt-editor .wx-layout,
+.wx-gantt-editor .wx-content,
+.wx-editor .wx-fieldset,
+.wx-editor .wx-layout {
+  background-color: oklch(var(--popover)) !important;
+  color: oklch(var(--popover-foreground)) !important;
+}
+
+.wx-sidearea input,
+.wx-sidearea select,
+.wx-sidearea textarea,
+.wx-gantt-editor input,
+.wx-gantt-editor select,
+.wx-gantt-editor textarea,
+.wx-editor input,
+.wx-editor select,
+.wx-editor textarea {
+  background-color: oklch(var(--input)) !important;
+  color: oklch(var(--foreground)) !important;
+  border: 1px solid oklch(var(--border)) !important;
+}
+
+.wx-sidearea label,
+.wx-gantt-editor label,
+.wx-editor label {
+  color: oklch(var(--foreground)) !important;
+}
+
+/* Dark mode overrides */
+.dark .wx-sidearea,
+.dark .wx-gantt-editor,
+.dark .wx-editor,
+.dark .wx-portal {
+  background-color: oklch(var(--popover)) !important;
+  border-color: oklch(var(--border)) !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3) !important;
+}
+
+.dark .wx-sidearea *,
+.dark .wx-gantt-editor *,
+.dark .wx-editor *,
+.dark .wx-portal * {
+  background-color: oklch(var(--popover)) !important;
 }
 
 

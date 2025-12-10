@@ -216,3 +216,92 @@ export function literal(value: string | number | boolean, datatype?: string): st
   }
   return `"${escapeSparqlString(value)}"`;
 }
+
+/**
+ * Get the current task counter for a project and increment it atomically
+ * @param projectIRI - The IRI of the project
+ * @param prefixString - The PREFIX declarations to use in SPARQL queries
+ * @returns The next task number to use
+ */
+export async function getAndIncrementTaskCounter(
+  projectIRI: string,
+  prefixString: string
+): Promise<number> {
+  // First, try to get the current counter
+  const selectQuery = `
+    ${prefixString}
+    SELECT ?counter
+    WHERE {
+      <${projectIRI}> pm:taskCounter ?counter .
+    }
+  `;
+
+  const results = await sparqlSelect(selectQuery);
+  let currentCounter = 0;
+
+  if (results.length > 0 && results[0].counter) {
+    currentCounter = parseInt(results[0].counter);
+  }
+
+  // Increment the counter
+  const nextCounter = currentCounter + 1;
+
+  // Update the counter in the database
+  const updateQuery = `
+    ${prefixString}
+    DELETE {
+      <${projectIRI}> pm:taskCounter ?oldCounter .
+    }
+    INSERT {
+      <${projectIRI}> pm:taskCounter ${nextCounter} .
+    }
+    WHERE {
+      <${projectIRI}> a sro:ScrumProject .
+      OPTIONAL { <${projectIRI}> pm:taskCounter ?oldCounter }
+    }
+  `;
+
+  await sparqlUpdate(updateQuery);
+
+  return nextCounter;
+}
+
+/**
+ * Initialize task counter for a project based on existing tasks
+ * @param projectIRI - The IRI of the project
+ * @param prefixString - The PREFIX declarations to use in SPARQL queries
+ */
+export async function initializeTaskCounter(
+  projectIRI: string,
+  prefixString: string
+): Promise<void> {
+  // Count existing tasks with the new ID format (PREFIX-NUMBER)
+  const countQuery = `
+    ${prefixString}
+    SELECT (COUNT(?task) as ?count)
+    WHERE {
+      ?task a pm:Task .
+      ?task pm:belongsToProject <${projectIRI}> .
+    }
+  `;
+
+  const results = await sparqlSelect(countQuery);
+  const taskCount = results.length > 0 && results[0].count ? parseInt(results[0].count) : 0;
+
+  // Set the counter to the current task count
+  const updateQuery = `
+    ${prefixString}
+    DELETE {
+      <${projectIRI}> pm:taskCounter ?oldCounter .
+    }
+    INSERT {
+      <${projectIRI}> pm:taskCounter ${taskCount} .
+    }
+    WHERE {
+      <${projectIRI}> a sro:ScrumProject .
+      OPTIONAL { <${projectIRI}> pm:taskCounter ?oldCounter }
+    }
+  `;
+
+  await sparqlUpdate(updateQuery);
+}

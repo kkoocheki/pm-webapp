@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ZoomIn, ZoomOut, Plus } from 'lucide-react';
 import { GanttChart } from '@/components/gantt-chart';
@@ -42,21 +43,21 @@ export default function TimelinePage() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold">Gantt Chart</h2>
-          <p className="text-sm text-muted-foreground">
+      <Card>
+        <CardHeader>
+          <CardTitle>Gantt Chart</CardTitle>
+          <CardDescription>
             Interactive timeline showing task schedules and dependencies. Drag tasks to reschedule, resize to change duration.
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card">
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="gantt-cell">
             <div className="gantt-box">
               <GanttChart onCreateTask={handleCreateTask} />
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Task Create Dialog */}
       <TaskEditDialog

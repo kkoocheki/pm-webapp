@@ -7,8 +7,8 @@
  */
 
 import { Hono } from 'hono';
-import { sparqlSelect, sparqlUpdate, escapeSparqlString } from '../lib/sparql';
-import { mapToTask, generateUniqueToken, extractToken } from '../lib/mappers';
+import { sparqlSelect, sparqlUpdate, escapeSparqlString, getAndIncrementTaskCounter } from '../lib/sparql';
+import { mapToTask, generateUniqueToken, extractToken, generateProjectPrefix, generateTaskId } from '../lib/mappers';
 import { PREFIX_STRING, PREFIXES } from '../types';
 import type { Task } from '../types';
 
@@ -96,17 +96,39 @@ app.get('/projects/:slug/tasks/:token', async (c) => {
 
 /**
  * POST /api/projects/:slug/tasks
- * Create a new task
+ * Create a new task with Jira/Linear style ID (e.g., PRO-123)
  */
 app.post('/projects/:slug/tasks', async (c) => {
   try {
     const slug = c.req.param('slug');
     const body = await c.req.json<Partial<Task>>();
+    const projectIRI = `${PREFIXES.ex}${slug}`;
 
-    const token = body.token || generateUniqueToken('task');
+    // Get project name for prefix generation
+    const projectQuery = `
+      ${PREFIX_STRING}
+      SELECT ?name
+      WHERE {
+        <${projectIRI}> a sro:ScrumProject ;
+                        rdfs:label ?name .
+      }
+    `;
+
+    const projectResults = await sparqlSelect(projectQuery);
+    if (projectResults.length === 0) {
+      return c.json({ error: 'Project not found' }, 404);
+    }
+
+    const projectName = projectResults[0].name;
+    const projectPrefix = generateProjectPrefix(projectName);
+
+    // Get next task number and increment counter
+    const taskNumber = await getAndIncrementTaskCounter(projectIRI, PREFIX_STRING);
+
+    // Generate the new task ID (e.g., PRO-123)
+    const token = generateTaskId(projectPrefix, taskNumber);
     const text = body.text || 'Untitled Task';
     const taskIRI = `${PREFIXES.ex}${token}`;
-    const projectIRI = `${PREFIXES.ex}${slug}`;
 
     const triples: string[] = [
       `<${taskIRI}> a pm:Task`,
@@ -137,6 +159,8 @@ app.post('/projects/:slug/tasks', async (c) => {
     `;
 
     await sparqlUpdate(insertQuery);
+
+    console.log(`[Tasks POST] Created new task with ID: ${token} (${projectPrefix}-${taskNumber})`);
 
     const task: Task = {
       token,

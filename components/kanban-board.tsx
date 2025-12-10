@@ -10,7 +10,7 @@ import {
 } from '@/components/kanban';
 import { tasksToKanbanFormat, taskKanbanColumns, kanbanToTaskUpdate } from '@/lib/adapters/kanban-adapter';
 import { useProjectData, useUpdateTask } from '@/lib/hooks/use-project-data';
-import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
+import { useUIStore } from '@/lib/stores/app-store';
 import { TaskEditDialog } from '@/components/task-edit-dialog';
 import { Task } from '@/lib/api/types';
 import { Button } from '@/components/ui/button';
@@ -26,11 +26,14 @@ interface TaskKanbanBoardProps {
 }
 
 export function TaskKanbanBoard({ onCreateTask }: TaskKanbanBoardProps) {
+  // Get current project from Zustand store
+  const currentProjectSlug = useUIStore((state) => state.currentProjectSlug);
+  
   // Get tasks directly from React Query cache
-  const { data, isLoading } = useProjectData(DEFAULT_PROJECT_SLUG);
+  const { data, isLoading } = useProjectData(currentProjectSlug);
   const rdfTasks = data?.tasks || [];
 
-  const updateTaskMutation = useUpdateTask(DEFAULT_PROJECT_SLUG);
+  const updateTaskMutation = useUpdateTask(currentProjectSlug);
   const kanbanTasks = tasksToKanbanFormat(rdfTasks);
   const [tasks, setTasks] = useState(kanbanTasks);
 
@@ -65,14 +68,6 @@ export function TaskKanbanBoard({ onCreateTask }: TaskKanbanBoardProps) {
     }
   }, [onCreateTask]);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-[600px] items-center justify-center">
-        <p className="text-muted-foreground">Loading tasks...</p>
-      </div>
-    );
-  }
-
   // Handle task movement between columns
   const handleDataChange = useCallback((newTasks: typeof tasks) => {
     // Update local state immediately for responsive UI
@@ -92,6 +87,14 @@ export function TaskKanbanBoard({ onCreateTask }: TaskKanbanBoardProps) {
       }
     });
   }, [tasks, updateTaskMutation]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[600px] items-center justify-center">
+        <p className="text-muted-foreground">Loading tasks...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[600px]">

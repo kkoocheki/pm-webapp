@@ -132,6 +132,17 @@ export function useDeleteTask(projectSlug: string = DEFAULT_PROJECT_SLUG) {
 }
 
 /**
+ * Hook to list all projects
+ */
+export function useProjectList() {
+  return useQuery({
+    queryKey: projectKeys.lists(),
+    queryFn: () => api.projects.listProjects(),
+    staleTime: 30000, // Consider data fresh for 30 seconds
+  });
+}
+
+/**
  * Hook to check backend health
  */
 export function useHealthCheck() {

@@ -3,9 +3,10 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Gantt, Willow, ContextMenu, Editor, Toolbar } from '@svar-ui/react-gantt';
 import type { IColumnConfig } from '@svar-ui/react-gantt';
+import { useTheme } from 'next-themes';
 import { useProjectData, useUpdateTask, useCreateTask, useDeleteTask } from '@/lib/hooks/use-project-data';
 import { storiesAndTasksToGanttFormat } from '@/lib/adapters/gantt-adapter';
-import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
+import { useUIStore } from '@/lib/stores/app-store';
 import { TaskStatus } from '@/lib/api/types';
 // Styles: using style.css in app/layout.tsx
 
@@ -15,6 +16,7 @@ const scales = [
 ];
 
 const columns: IColumnConfig[] = [
+  { id: 'id', header: 'ID', width: 100 },
   { id: 'text', header: 'Task Name', width: 250, flexgrow: 1 },
   { id: 'start', header: 'Start Date', align: 'center' as const, width: 120 },
   { id: 'end', header: 'End Date', align: 'center' as const, width: 120 },
@@ -56,29 +58,63 @@ interface GanttChartProps {
 export function GanttChart({ showAddButton = false, onCreateTask }: GanttChartProps) {
   const [mounted, setMounted] = useState(false);
   const [api, setApi] = useState<any>(null);
-  
+  const { theme, resolvedTheme } = useTheme();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Get current project from Zustand store
+  const currentProjectSlug = useUIStore((state) => state.currentProjectSlug);
+
   // Track if we're syncing to prevent loops
   const isSyncingRef = useRef(false);
-  
+
+  // Store pending changes from editor
+  const pendingEditorChangesRef = useRef<{ id: string; changes: any } | null>(null);
+
   // Mutations
-  const updateTaskMutation = useUpdateTask(DEFAULT_PROJECT_SLUG);
-  const createTaskMutation = useCreateTask(DEFAULT_PROJECT_SLUG);
-  const deleteTaskMutation = useDeleteTask(DEFAULT_PROJECT_SLUG);
-  
+  const updateTaskMutation = useUpdateTask(currentProjectSlug);
+  const createTaskMutation = useCreateTask(currentProjectSlug);
+  const deleteTaskMutation = useDeleteTask(currentProjectSlug);
+
   // Store mutations in refs to avoid re-creating event handlers
   const mutationsRef = useRef({ updateTaskMutation, createTaskMutation, deleteTaskMutation });
   mutationsRef.current = { updateTaskMutation, createTaskMutation, deleteTaskMutation };
 
   // Get data directly from React Query cache
-  const { data } = useProjectData(DEFAULT_PROJECT_SLUG);
+  const { data, isLoading } = useProjectData(currentProjectSlug);
   const tasks = data?.tasks || EMPTY_TASKS;
   const dependencies = data?.dependencies || EMPTY_DEPENDENCIES;
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[GanttChart] Data update:', {
+      isLoading,
+      tasksCount: tasks.length,
+      tasks: tasks,
+      dependencies: dependencies.length
+    });
+  }, [isLoading, tasks, dependencies]);
 
   // Convert data to Gantt format - will update when React Query data changes
   const ganttData = useMemo(() => {
     console.log('[Gantt] Converting tasks to Gantt format:', tasks.length, 'tasks');
+    console.log('[Gantt] Input tasks:', tasks);
     const result = storiesAndTasksToGanttFormat(EMPTY_STORIES, tasks, dependencies);
     console.log('[Gantt] Converted to:', result.tasks.length, 'gantt tasks');
+    console.log('[Gantt] Output gantt tasks:', result.tasks);
+    console.log('[Gantt] Links:', result.links);
+
+    // Check for tasks without dates
+    const tasksWithoutDates = tasks.filter(t => !t.startDate || !t.endDate);
+    if (tasksWithoutDates.length > 0) {
+      console.warn('[Gantt] Tasks without dates:', tasksWithoutDates.length, tasksWithoutDates);
+    }
+
+    // Check parent-child relationships
+    const tasksWithParents = result.tasks.filter(t => t.parent);
+    if (tasksWithParents.length > 0) {
+      console.log('[Gantt] Tasks with parents (nested):', tasksWithParents.length);
+    }
+
     return result;
   }, [tasks, dependencies]);
 
@@ -90,6 +126,37 @@ export function GanttChart({ showAddButton = false, onCreateTask }: GanttChartPr
     // Listen for show-editor to debug
     ganttApi.on('show-editor', ({ id }: { id: string }) => {
       console.log('[Gantt] show-editor event for task:', id);
+      // Clear any pending changes when opening editor
+      pendingEditorChangesRef.current = null;
+    });
+
+    // Listen for editor close to save changes
+    ganttApi.on('hide-editor', ({ id }: { id: string }) => {
+      console.log('[Gantt] hide-editor event for task:', id);
+
+      // Save any pending changes when editor closes
+      if (pendingEditorChangesRef.current && !isSyncingRef.current) {
+        isSyncingRef.current = true;
+        const { id: taskId, changes } = pendingEditorChangesRef.current;
+        const fullTask = ganttApi.getTask(taskId);
+
+        console.log('[Gantt] Saving pending changes on editor close:', taskId, changes);
+
+        mutationsRef.current.updateTaskMutation.mutate({
+          taskId,
+          updates: {
+            title: fullTask?.text || changes?.text,
+            startDate: formatDate(fullTask?.start || changes?.start),
+            endDate: formatDate(fullTask?.end || changes?.end),
+            status: progressToStatus(fullTask?.progress ?? changes?.progress ?? 0),
+          }
+        }, {
+          onSettled: () => {
+            isSyncingRef.current = false;
+            pendingEditorChangesRef.current = null;
+          }
+        });
+      }
     });
     
     // Show editor when adding a task
@@ -118,28 +185,15 @@ export function GanttChart({ showAddButton = false, onCreateTask }: GanttChartPr
       }
     });
     
-    // Sync updates to backend
+    // Track updates but don't save immediately - wait for editor close
     ganttApi.on('update-task', ({ id, task: updatedFields }: { id: string; task: any }) => {
       console.log('[Gantt] update-task event:', id, updatedFields);
-      
-      if (!isSyncingRef.current) {
-        isSyncingRef.current = true;
-        const fullTask = ganttApi.getTask(id);
-        
-        mutationsRef.current.updateTaskMutation.mutate({
-          taskId: id,
-          updates: {
-            title: fullTask?.text || updatedFields?.text,
-            startDate: formatDate(fullTask?.start || updatedFields?.start),
-            endDate: formatDate(fullTask?.end || updatedFields?.end),
-            status: progressToStatus(fullTask?.progress ?? updatedFields?.progress ?? 0),
-          }
-        }, {
-          onSettled: () => {
-            isSyncingRef.current = false;
-          }
-        });
-      }
+
+      // Store pending changes instead of immediately syncing
+      pendingEditorChangesRef.current = {
+        id,
+        changes: updatedFields
+      };
     });
     
     // Sync deletes to backend
@@ -158,11 +212,21 @@ export function GanttChart({ showAddButton = false, onCreateTask }: GanttChartPr
   }, []); // Empty deps - only create once
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    // Wait for theme to be resolved before mounting
+    if (resolvedTheme) {
+      setMounted(true);
+    }
+  }, [resolvedTheme]);
 
-  // Don't render until mounted to avoid SSR issues
-  if (!mounted) {
+  // Determine which theme to use (system theme takes precedence)
+  const currentTheme = resolvedTheme || theme;
+  const isDark = currentTheme === 'dark';
+
+  // Don't render until:
+  // 1. Component is mounted (client-side only)
+  // 2. Theme is resolved (prevents flash of wrong theme)
+  // 3. Data is loaded
+  if (!mounted || !resolvedTheme || isLoading) {
     return (
       <div className="flex items-center justify-center h-[600px] text-muted-foreground">
         Loading Gantt chart...
@@ -170,19 +234,12 @@ export function GanttChart({ showAddButton = false, onCreateTask }: GanttChartPr
     );
   }
 
-  // Component structure following SVAR docs:
-  // <Willow> for theming
-  //   <Toolbar api={api} /> - horizontal toolbar with action buttons
-  //   <ContextMenu api={api}> - right-click context menu wrapper
-  //     <Gantt ... /> - main gantt chart
-  //   </ContextMenu>
-  //   <Editor api={api} /> - sidebar/modal editor for task details
-  // </Willow>
+  // Component structure following SVAR docs best practices
   return (
-    <Willow>
-      <Toolbar api={api} />
-      <ContextMenu api={api}>
-        <div style={{ height: '550px' }}>
+    <div ref={containerRef} className="gantt-container">
+      <Willow theme={isDark ? 'WillowDark' : 'Willow'} key={isDark ? 'dark' : 'light'}>
+        <Toolbar api={api} />
+        <ContextMenu api={api}>
           <Gantt
             tasks={ganttData.tasks}
             links={ganttData.links}
@@ -192,9 +249,9 @@ export function GanttChart({ showAddButton = false, onCreateTask }: GanttChartPr
             cellHeight={44}
             init={initGantt}
           />
-        </div>
-      </ContextMenu>
-      {api && <Editor api={api} />}
-    </Willow>
+        </ContextMenu>
+        {api && <Editor api={api} />}
+      </Willow>
+    </div>
   );
 }

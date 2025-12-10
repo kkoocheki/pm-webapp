@@ -1,0 +1,559 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sro:    <https://www.knoid.io/ontologies/sro#> .
+@prefix pm:     <https://www.knoid.io/ontologies/pm#> .
+@prefix spo:    <https://www.knoid.io/ontologies/spo#> .
+@prefix eo:     <https://www.knoid.io/ontologies/eo#> .
+@prefix rsro:   <https://www.knoid.io/ontologies/rsro#> .
+@prefix knoid-shapes: <https://www.knoid.io/shapes#> .
+
+# ============================================================================
+# SHACL SHAPES FOR KNOID SCRUM PM ONTOLOGY VALIDATION
+# ============================================================================
+# Version: 2.0.0
+# Date: 2025-11-27
+#
+# These shapes validate instance data against the Scrum PM ontology.
+# Use with Apache Jena SHACL: shacl validate --shapes shapes.ttl --data data.ttl
+# ============================================================================
+
+
+# ============================================================================
+# SECTION 1: SCRUM PROJECT SHAPES
+# ============================================================================
+
+knoid-shapes:ScrumProjectShape a sh:NodeShape ;
+    sh:targetClass sro:ScrumProject ;
+    sh:name "Scrum Project Shape" ;
+    sh:description "Validates Scrum Project instances" ;
+    
+    # Required: name
+    sh:property [
+        sh:path eo:name ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:name "Project Name" ;
+        sh:message "A Scrum Project must have exactly one name" ;
+    ] ;
+    
+    # Required: product backlog
+    sh:property [
+        sh:path sro:hasProductBacklog ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class sro:ProductBacklog ;
+        sh:name "Product Backlog" ;
+        sh:message "A Scrum Project must have exactly one Product Backlog" ;
+    ] ;
+    
+    # Optional but recommended: planned dates
+    sh:property [
+        sh:path pm:hasPlannedStart ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:name "Planned Start Date" ;
+    ] ;
+    
+    sh:property [
+        sh:path pm:hasPlannedEnd ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:name "Planned End Date" ;
+    ] ;
+    
+    # Should have at least 3 team members (PO, SM, Dev)
+    sh:property [
+        sh:path sro:hasTeamMember ;
+        sh:minCount 3 ;
+        sh:class sro:ScrumTeamMember ;
+        sh:name "Team Members" ;
+        sh:message "A Scrum Project should have at least 3 team members" ;
+        sh:severity sh:Warning ;
+    ] ;
+    .
+
+
+# ============================================================================
+# SECTION 2: SPRINT SHAPES
+# ============================================================================
+
+knoid-shapes:SprintShape a sh:NodeShape ;
+    sh:targetClass sro:Sprint ;
+    sh:name "Sprint Shape" ;
+    sh:description "Validates Sprint instances" ;
+    
+    # Required: sprint number
+    sh:property [
+        sh:path sro:sprintNumber ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:name "Sprint Number" ;
+        sh:message "A Sprint must have a positive integer sprint number" ;
+    ] ;
+    
+    # Required: parent project
+    sh:property [
+        sh:path sro:isPartOf ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class sro:ScrumProject ;
+        sh:name "Parent Project" ;
+        sh:message "A Sprint must belong to exactly one Scrum Project" ;
+    ] ;
+    
+    # Required: planned dates
+    sh:property [
+        sh:path pm:hasPlannedStart ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:name "Planned Start Date" ;
+        sh:message "A Sprint must have a planned start date" ;
+    ] ;
+    
+    sh:property [
+        sh:path pm:hasPlannedEnd ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:name "Planned End Date" ;
+        sh:message "A Sprint must have a planned end date" ;
+    ] ;
+    
+    # Optional: sprint goal (recommended)
+    sh:property [
+        sh:path sro:hasSprintGoal ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:name "Sprint Goal" ;
+        sh:message "A Sprint should have a sprint goal" ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Sprint backlog
+    sh:property [
+        sh:path sro:hasSprintBacklog ;
+        sh:maxCount 1 ;
+        sh:class sro:SprintBacklog ;
+        sh:name "Sprint Backlog" ;
+    ] ;
+    
+    # Sprint duration validation
+    sh:property [
+        sh:path sro:sprintDuration ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:duration ;
+        sh:name "Sprint Duration" ;
+    ] ;
+    .
+
+# Custom SPARQL constraint: end date must be after start date
+knoid-shapes:SprintDateOrderConstraint a sh:NodeShape ;
+    sh:targetClass sro:Sprint ;
+    sh:sparql [
+        sh:message "Sprint end date must be after start date" ;
+        sh:prefixes [
+            sh:declare [ sh:prefix "pm" ; sh:namespace "https://www.knoid.io/ontologies/pm#" ]
+        ] ;
+        sh:select """
+            SELECT $this ?start ?end
+            WHERE {
+                $this pm:hasPlannedStart ?start ;
+                      pm:hasPlannedEnd ?end .
+                FILTER (?end <= ?start)
+            }
+        """ ;
+    ] ;
+    .
+
+
+# ============================================================================
+# SECTION 3: USER STORY SHAPES
+# ============================================================================
+
+knoid-shapes:UserStoryShape a sh:NodeShape ;
+    sh:targetClass sro:UserStory ;
+    sh:name "User Story Shape" ;
+    sh:description "Validates User Story instances" ;
+    
+    # Required: name
+    sh:property [
+        sh:path eo:name ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:name "Story Name" ;
+        sh:message "A User Story must have exactly one name" ;
+    ] ;
+    
+    # Required: state
+    sh:property [
+        sh:path sro:hasState ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in (sro:Backlog sro:ToDo sro:InProgress sro:InReview sro:Done sro:Cancelled sro:Duplicate sro:Blocked) ;
+        sh:name "State" ;
+        sh:message "A User Story must have exactly one valid state" ;
+    ] ;
+    
+    # Recommended: story points (for non-epics)
+    sh:property [
+        sh:path sro:storyPoints ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive 0 ;
+        sh:name "Story Points" ;
+    ] ;
+    
+    # Recommended: priority
+    sh:property [
+        sh:path sro:hasPriority ;
+        sh:maxCount 1 ;
+        sh:in (sro:NoPriority sro:Urgent sro:High sro:Medium sro:Low) ;
+        sh:name "Priority" ;
+    ] ;
+    
+    # Acceptance criteria (at least 1 recommended for refinement)
+    sh:property [
+        sh:path sro:hasAcceptanceCriterion ;
+        sh:class sro:AcceptanceCriterion ;
+        sh:name "Acceptance Criteria" ;
+    ] ;
+    
+    # Story text (recommended)
+    sh:property [
+        sh:path sro:storyText ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:name "Story Text" ;
+        sh:message "User stories should have story text in 'As a... I want... So that...' format" ;
+        sh:severity sh:Info ;
+    ] ;
+    .
+
+# Stories in sprint should have points
+knoid-shapes:SprintStoryPointsConstraint a sh:NodeShape ;
+    sh:targetClass sro:UserStory ;
+    sh:sparql [
+        sh:message "User Stories in a sprint should have story points assigned" ;
+        sh:severity sh:Warning ;
+        sh:prefixes [
+            sh:declare [ sh:prefix "sro" ; sh:namespace "https://www.knoid.io/ontologies/sro#" ]
+        ] ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this sro:isInSprint ?sprint .
+                FILTER NOT EXISTS { $this sro:storyPoints ?points }
+            }
+        """ ;
+    ] ;
+    .
+
+
+# ============================================================================
+# SECTION 4: EPIC SHAPES
+# ============================================================================
+
+knoid-shapes:EpicShape a sh:NodeShape ;
+    sh:targetClass sro:Epic ;
+    sh:name "Epic Shape" ;
+    sh:description "Validates Epic instances" ;
+    
+    # An epic should be decomposed into stories
+    sh:property [
+        sh:path sro:decomposedInto ;
+        sh:minCount 1 ;
+        sh:class sro:UserStory ;
+        sh:name "Child Stories" ;
+        sh:message "An Epic should be decomposed into at least one User Story" ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Business value (recommended for epics)
+    sh:property [
+        sh:path sro:hasBusinessValue ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 100 ;
+        sh:name "Business Value" ;
+    ] ;
+    .
+
+
+# ============================================================================
+# SECTION 5: TASK SHAPES
+# ============================================================================
+
+knoid-shapes:TaskShape a sh:NodeShape ;
+    sh:targetClass pm:Task ;
+    sh:name "Task Shape" ;
+    sh:description "Validates Task instances" ;
+    
+    # Required: name
+    sh:property [
+        sh:path eo:name ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:name "Task Name" ;
+        sh:message "A Task must have exactly one name" ;
+    ] ;
+    
+    # Required: state
+    sh:property [
+        sh:path sro:hasState ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in (sro:Backlog sro:ToDo sro:InProgress sro:InReview sro:Done sro:Cancelled sro:Duplicate sro:Blocked) ;
+        sh:name "State" ;
+        sh:message "A Task must have exactly one valid state" ;
+    ] ;
+    
+    # Should have parent story
+    sh:property [
+        sh:path pm:hasParent ;
+        sh:minCount 1 ;
+        sh:name "Parent" ;
+        sh:message "A Task should have a parent User Story or Task" ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    # Duration (for scheduling)
+    sh:property [
+        sh:path pm:duration ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive 0 ;
+        sh:name "Duration (days)" ;
+    ] ;
+    
+    # Effort estimates
+    sh:property [
+        sh:path pm:estimatedEffort ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:duration ;
+        sh:name "Estimated Effort" ;
+    ] ;
+    
+    sh:property [
+        sh:path pm:actualEffort ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:duration ;
+        sh:name "Actual Effort" ;
+    ] ;
+    
+    # Assignee
+    sh:property [
+        sh:path pm:assignedTo ;
+        sh:maxCount 1 ;
+        sh:class sro:ScrumTeamMember ;
+        sh:name "Assignee" ;
+    ] ;
+    .
+
+
+# ============================================================================
+# SECTION 6: DEPENDENCY SHAPES
+# ============================================================================
+
+knoid-shapes:DependencyShape a sh:NodeShape ;
+    sh:targetClass pm:Dependency ;
+    sh:name "Dependency Shape" ;
+    sh:description "Validates Dependency instances" ;
+    
+    # Required: predecessor
+    sh:property [
+        sh:path pm:predecessor ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name "Predecessor" ;
+        sh:message "A Dependency must have exactly one predecessor" ;
+    ] ;
+    
+    # Required: successor
+    sh:property [
+        sh:path pm:successor ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name "Successor" ;
+        sh:message "A Dependency must have exactly one successor" ;
+    ] ;
+    
+    # Required: link type
+    sh:property [
+        sh:path pm:linkType ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in (pm:FinishToStart pm:StartToStart pm:FinishToFinish pm:StartToFinish) ;
+        sh:name "Link Type" ;
+        sh:message "A Dependency must have a valid link type" ;
+    ] ;
+    
+    # Lag (optional)
+    sh:property [
+        sh:path pm:lag ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:name "Lag" ;
+    ] ;
+    .
+
+# Circular dependency check
+knoid-shapes:NoCyclicDependency a sh:NodeShape ;
+    sh:targetClass pm:Dependency ;
+    sh:sparql [
+        sh:message "Circular dependency detected: task cannot depend on itself" ;
+        sh:prefixes [
+            sh:declare [ sh:prefix "pm" ; sh:namespace "https://www.knoid.io/ontologies/pm#" ]
+        ] ;
+        sh:select """
+            SELECT $this ?pred
+            WHERE {
+                $this pm:predecessor ?pred ;
+                      pm:successor ?pred .
+            }
+        """ ;
+    ] ;
+    .
+
+
+# ============================================================================
+# SECTION 7: TEAM MEMBER SHAPES
+# ============================================================================
+
+knoid-shapes:ScrumTeamMemberShape a sh:NodeShape ;
+    sh:targetClass sro:ScrumTeamMember ;
+    sh:name "Scrum Team Member Shape" ;
+    sh:description "Validates Scrum Team Member instances" ;
+    
+    # Required: name
+    sh:property [
+        sh:path eo:name ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:name "Member Name" ;
+        sh:message "A Team Member must have exactly one name" ;
+    ] ;
+    
+    # Recommended: email
+    sh:property [
+        sh:path eo:email ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" ;
+        sh:name "Email" ;
+        sh:message "Email must be in valid format" ;
+    ] ;
+    .
+
+
+# ============================================================================
+# SECTION 8: DELIVERABLE SHAPES
+# ============================================================================
+
+knoid-shapes:DeliverableShape a sh:NodeShape ;
+    sh:targetClass sro:Deliverable ;
+    sh:name "Deliverable Shape" ;
+    sh:description "Validates Deliverable instances" ;
+    
+    # Required: materializes a story
+    sh:property [
+        sh:path sro:materializes ;
+        sh:minCount 1 ;
+        sh:class sro:UserStory ;
+        sh:name "Materializes" ;
+        sh:message "A Deliverable must materialize at least one User Story" ;
+    ] ;
+    
+    # Name
+    sh:property [
+        sh:path eo:name ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:name "Deliverable Name" ;
+    ] ;
+    .
+
+knoid-shapes:AcceptedDeliverableShape a sh:NodeShape ;
+    sh:targetClass sro:AcceptedDeliverable ;
+    sh:name "Accepted Deliverable Shape" ;
+    sh:description "Validates Accepted Deliverable instances" ;
+    
+    # Should have acceptance info
+    sh:property [
+        sh:path sro:acceptedBy ;
+        sh:maxCount 1 ;
+        sh:class sro:ProductOwner ;
+        sh:name "Accepted By" ;
+        sh:message "Accepted deliverable should record who accepted it" ;
+        sh:severity sh:Warning ;
+    ] ;
+    
+    sh:property [
+        sh:path sro:acceptanceDate ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:name "Acceptance Date" ;
+    ] ;
+    .
+
+
+# ============================================================================
+# SECTION 9: CROSS-ENTITY CONSTRAINTS
+# ============================================================================
+
+# Stories in sprint backlog must reference that sprint
+knoid-shapes:SprintBacklogConsistency a sh:NodeShape ;
+    sh:targetClass sro:UserStory ;
+    sh:sparql [
+        sh:message "Story in sprint backlog must also reference the sprint via sro:isInSprint" ;
+        sh:severity sh:Warning ;
+        sh:prefixes [
+            sh:declare [ sh:prefix "sro" ; sh:namespace "https://www.knoid.io/ontologies/sro#" ]
+        ] ;
+        sh:select """
+            SELECT $this ?backlog ?sprint
+            WHERE {
+                $this sro:isInSprintBacklog ?backlog .
+                ?sprint sro:hasSprintBacklog ?backlog .
+                FILTER NOT EXISTS { $this sro:isInSprint ?sprint }
+            }
+        """ ;
+    ] ;
+    .
+
+# Done stories should have an accepted deliverable
+knoid-shapes:DoneStoryDeliverableConstraint a sh:NodeShape ;
+    sh:targetClass sro:UserStory ;
+    sh:sparql [
+        sh:message "Done stories should have an accepted deliverable" ;
+        sh:severity sh:Info ;
+        sh:prefixes [
+            sh:declare [ sh:prefix "sro" ; sh:namespace "https://www.knoid.io/ontologies/sro#" ]
+        ] ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this sro:hasState sro:Done .
+                FILTER NOT EXISTS {
+                    ?deliverable sro:materializes $this ;
+                                 a sro:AcceptedDeliverable .
+                }
+            }
+        """ ;
+    ] ;
+    .
+
+
+# ============================================================================
+# END OF SHACL SHAPES
+# ============================================================================

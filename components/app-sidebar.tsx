@@ -24,6 +24,7 @@ import {
   SidebarFooter,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { ProjectSelector } from '@/components/project-selector';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -79,6 +80,11 @@ export function AppSidebar() {
                 </div>
               </Link>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <div className="px-2 py-1">
+              <ProjectSelector />
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

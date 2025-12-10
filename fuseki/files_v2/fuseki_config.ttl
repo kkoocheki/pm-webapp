@@ -1,0 +1,138 @@
+# ============================================================================
+# APACHE JENA FUSEKI CONFIGURATION - Knoid Scrum PM
+# ============================================================================
+# Version: 2.0.0
+# Date: 2025-11-27
+#
+# This configuration file sets up a Fuseki server with:
+# - TDB2 persistent storage
+# - Custom inference rules
+# - RDFS and OWL reasoning
+# - SPARQL 1.1 endpoints
+#
+# Usage:
+#   fuseki-server --config=fuseki_config.ttl
+#
+# Or place in $FUSEKI_BASE/configuration/ directory
+# ============================================================================
+
+@prefix :        <#> .
+@prefix fuseki:  <http://jena.apache.org/fuseki#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ja:      <http://jena.hpl.hp.com/2005/11/Assembler#> .
+@prefix tdb2:    <http://jena.apache.org/2016/tdb#> .
+
+# ============================================================================
+# SERVER CONFIGURATION
+# ============================================================================
+
+[] rdf:type fuseki:Server ;
+   fuseki:services (
+     :knoid_service
+   ) .
+
+# ============================================================================
+# KNOID SERVICE - Main Dataset with Inference
+# ============================================================================
+
+:knoid_service rdf:type fuseki:Service ;
+    fuseki:name                      "knoid" ;
+    fuseki:serviceQuery              "query", "sparql" ;
+    fuseki:serviceUpdate             "update" ;
+    fuseki:serviceUpload             "upload" ;
+    fuseki:serviceReadWriteGraphStore "data" ;
+    fuseki:serviceReadGraphStore     "get" ;
+    fuseki:dataset                   :knoid_dataset ;
+    .
+
+# ============================================================================
+# DATASET CONFIGURATION - TDB2 with Inference
+# ============================================================================
+
+:knoid_dataset rdf:type ja:RDFDataset ;
+    ja:defaultGraph :knoid_inf_model ;
+    .
+
+# Inference model wrapping TDB2 storage
+:knoid_inf_model rdf:type ja:InfModel ;
+    ja:baseModel :knoid_tdb_graph ;
+    ja:reasoner :knoid_reasoner ;
+    .
+
+# TDB2 persistent storage
+:knoid_tdb_graph rdf:type tdb2:GraphTDB2 ;
+    tdb2:location "DB/knoid" ;
+    .
+
+# ============================================================================
+# REASONER CONFIGURATION - Custom Rules + RDFS
+# ============================================================================
+
+:knoid_reasoner rdf:type ja:GenericRuleReasoner ;
+    ja:rulesFrom "rules/rdfs_useful.rules" ;
+    ja:rulesFrom "rules/custom.rules" ;
+    ja:rulesFrom "rules/temporal.rules" ;
+    # Rule mode: forward, backward, or hybrid
+    ja:mode "hybrid" ;
+    # Enable trace for debugging (set to false in production)
+    ja:trace false ;
+    .
+
+# ============================================================================
+# ALTERNATIVE: OWL Reasoner Configuration (if full OWL needed)
+# ============================================================================
+# Uncomment to use OWL Mini reasoner instead of custom rules
+# Note: OWL reasoning is heavier but provides more complete inference
+
+# :knoid_reasoner_owl rdf:type ja:OWLMiniReasoner ;
+#     ja:schema :knoid_schema ;
+#     .
+#
+# :knoid_schema rdf:type ja:MemoryModel ;
+#     ja:content [
+#         ja:externalContent <file:ontology/scrum_pm_ontology_v2.ttl>
+#     ] ;
+#     .
+
+# ============================================================================
+# ALTERNATIVE: In-Memory Dataset (for development/testing)
+# ============================================================================
+# Uncomment for faster development without persistence
+
+# :knoid_mem_dataset rdf:type ja:RDFDataset ;
+#     ja:defaultGraph :knoid_mem_inf_model ;
+#     .
+#
+# :knoid_mem_inf_model rdf:type ja:InfModel ;
+#     ja:baseModel :knoid_mem_graph ;
+#     ja:reasoner :knoid_reasoner ;
+#     .
+#
+# :knoid_mem_graph rdf:type ja:MemoryModel ;
+#     ja:content [
+#         ja:externalContent <file:ontology/scrum_pm_ontology_v2.ttl>
+#     ] ;
+#     ja:content [
+#         ja:externalContent <file:data/example_project_scrum_aligned_v2.ttl>
+#     ] ;
+#     .
+
+# ============================================================================
+# UNION DEFAULT GRAPH (optional)
+# ============================================================================
+# Enable to make SPARQL queries search all named graphs by default
+
+# :knoid_dataset ja:unionDefaultGraph true ;
+#     .
+
+# ============================================================================
+# PREFIXES FOR SPARQL (convenience)
+# ============================================================================
+# These prefixes will be available in the Fuseki query interface
+
+[] ja:loadClass "org.apache.jena.query.ARQ" .
+
+# ============================================================================
+# END OF FUSEKI CONFIGURATION
+# ============================================================================

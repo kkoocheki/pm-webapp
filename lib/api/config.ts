@@ -30,6 +30,10 @@ export const ENDPOINTS = {
   // Import/Export
   importTtl: '/api/import/ttl',
   importJira: '/api/import/jira',
+  importCsvLinear: '/api/import/csv/linear',
+  importCsvJira: '/api/import/csv/jira',
+  exportCsv: (projectSlug: string, format: 'linear' | 'jira') =>
+    `/api/projects/${projectSlug}/export/csv?format=${format}`,
   jiraProjects: (jiraUrl: string, email: string, apiToken: string) =>
     `/api/import/jira/projects?url=${encodeURIComponent(jiraUrl)}&email=${encodeURIComponent(email)}&token=${encodeURIComponent(apiToken)}`,
 
