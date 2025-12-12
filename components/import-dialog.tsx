@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useImportTtl } from '@/lib/hooks/use-advanced-features';
+import { useUIStore } from '@/lib/stores/app-store';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ export function ImportDialog() {
   const [overwrite, setOverwrite] = useState(false);
 
   const importMutation = useImportTtl();
+  const setCurrentProjectSlug = useUIStore((state) => state.setCurrentProjectSlug);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -39,7 +41,11 @@ export function ImportDialog() {
     if (!file || !projectName) return;
 
     try {
-      await importMutation.mutateAsync({ file, projectName, overwrite });
+      const result = await importMutation.mutateAsync({ file, projectName, overwrite });
+      // Switch to the newly imported project
+      if (result.project_slug) {
+        setCurrentProjectSlug(result.project_slug);
+      }
       setOpen(false);
       setFile(null);
       setProjectName('');

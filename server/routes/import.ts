@@ -9,6 +9,7 @@ import { generateToken } from '../lib/mappers';
 import { PREFIX_STRING, PREFIXES } from '../types';
 import type { ImportResult, JiraImportRequest, JiraImportResult, JiraProject } from '../types';
 import { Version2Client } from 'jira.js';
+import { linearCSVToTriples, jiraCSVToTriples } from '../lib/csv-parser';
 
 const app = new Hono();
 
@@ -234,6 +235,120 @@ app.post('/jira', async (c) => {
   } catch (error) {
     console.error('Error importing from Jira:', error);
     return c.json({ error: 'Failed to import from Jira' }, 500);
+  }
+});
+
+/**
+ * POST /api/import/csv/linear
+ * Import a project from a Linear CSV file
+ */
+app.post('/csv/linear', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const projectName = formData.get('project_name') as string;
+    const overwrite = formData.get('overwrite') === 'true';
+
+    if (!file || !projectName) {
+      return c.json({ error: 'file and project_name are required' }, 400);
+    }
+
+    const csvContent = await file.text();
+    const { triples, projectSlug, projectIRI, stats } = linearCSVToTriples(csvContent, projectName);
+
+    const graphIRI = `${PREFIXES.pm}graph/${projectSlug}`;
+
+    // If overwrite, clear the existing graph
+    if (overwrite) {
+      await sparqlUpdate(`
+        ${PREFIX_STRING}
+        DROP SILENT GRAPH <${graphIRI}>
+      `);
+    }
+
+    // Insert all triples
+    if (triples.length > 0) {
+      await sparqlUpdate(`
+        ${PREFIX_STRING}
+        INSERT DATA {
+          GRAPH <${graphIRI}> {
+            ${triples.join(' .\n            ')} .
+          }
+        }
+      `);
+    }
+
+    const result: ImportResult = {
+      project_slug: projectSlug,
+      project_iri: projectIRI,
+      tasks_created: stats.tasks,
+      dependencies_created: 0,
+      user_stories_created: stats.stories,
+      sprints_created: stats.sprints.size,
+      message: `Successfully imported ${stats.tasks} tasks (${stats.epics} epics, ${stats.stories} stories) and ${stats.sprints.size} sprints from Linear CSV`,
+    };
+
+    return c.json(result, 201);
+  } catch (error) {
+    console.error('Error importing Linear CSV:', error);
+    return c.json({ error: 'Failed to import Linear CSV file', details: error.message }, 500);
+  }
+});
+
+/**
+ * POST /api/import/csv/jira
+ * Import a project from a Jira CSV file
+ */
+app.post('/csv/jira', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const projectName = formData.get('project_name') as string;
+    const overwrite = formData.get('overwrite') === 'true';
+
+    if (!file || !projectName) {
+      return c.json({ error: 'file and project_name are required' }, 400);
+    }
+
+    const csvContent = await file.text();
+    const { triples, projectSlug, projectIRI, stats } = jiraCSVToTriples(csvContent, projectName);
+
+    const graphIRI = `${PREFIXES.pm}graph/${projectSlug}`;
+
+    // If overwrite, clear the existing graph
+    if (overwrite) {
+      await sparqlUpdate(`
+        ${PREFIX_STRING}
+        DROP SILENT GRAPH <${graphIRI}>
+      `);
+    }
+
+    // Insert all triples
+    if (triples.length > 0) {
+      await sparqlUpdate(`
+        ${PREFIX_STRING}
+        INSERT DATA {
+          GRAPH <${graphIRI}> {
+            ${triples.join(' .\n            ')} .
+          }
+        }
+      `);
+    }
+
+    const result: ImportResult = {
+      project_slug: projectSlug,
+      project_iri: projectIRI,
+      tasks_created: stats.tasks,
+      dependencies_created: 0,
+      user_stories_created: stats.stories,
+      sprints_created: stats.sprints.size,
+      message: `Successfully imported ${stats.tasks} tasks (${stats.epics} epics, ${stats.stories} stories) and ${stats.sprints.size} sprints from Jira CSV`,
+    };
+
+    return c.json(result, 201);
+  } catch (error) {
+    console.error('Error importing Jira CSV:', error);
+    return c.json({ error: 'Failed to import Jira CSV file', details: error.message }, 500);
   }
 });
 

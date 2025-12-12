@@ -1,12 +1,13 @@
 /**
  * TypeScript Backend Server
- * Unified backend for PM App using Hono
+ * Unified backend for PM App using Hono with OpenAPI documentation
  */
 
-import { Hono } from 'hono';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { serve } from '@hono/node-server';
+import { apiReference } from '@scalar/hono-api-reference';
 
 // Import routes
 import projectsRoutes from './routes/projects';
@@ -16,7 +17,7 @@ import importRoutes from './routes/import';
 import analyticsRoutes from './routes/analytics';
 import reasoningRoutes from './routes/reasoning';
 
-const app = new Hono();
+const app = new OpenAPIHono();
 
 // Middleware
 app.use('*', logger());
@@ -43,6 +44,34 @@ app.route('/api', linksRoutes);
 app.route('/api/import', importRoutes);
 app.route('/api/analytics', analyticsRoutes);
 app.route('/api/reasoning', reasoningRoutes);
+
+// OpenAPI documentation
+app.doc('/openapi.json', {
+  openapi: '3.1.0',
+  info: {
+    title: 'PM App API',
+    version: '1.0.0',
+    description: 'Project Management Application API with SPARQL backend',
+  },
+  servers: [
+    {
+      url: 'http://localhost:8000',
+      description: 'Development server',
+    },
+  ],
+});
+
+// Scalar API Reference UI
+app.get(
+  '/docs',
+  apiReference({
+    spec: {
+      url: '/openapi.json',
+    },
+    theme: 'purple',
+    darkMode: true,
+  })
+);
 
 // 404 handler
 app.notFound((c) => {

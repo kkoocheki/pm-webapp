@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+// SVAR Gantt - using all.css for complete styling including Editor
+// Import BEFORE globals.css so our custom theme styles can override
+import "@svar-ui/react-gantt/all.css";
 import "./globals.css";
-import "@svar-ui/react-gantt/style.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 

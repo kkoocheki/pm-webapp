@@ -7,6 +7,9 @@ import { ImportDialog } from '@/components/import-dialog';
 import { JiraImportDialog } from '@/components/jira-import-dialog';
 import { GitHubImportDialog } from '@/components/github-import-dialog';
 import { AsanaImportDialog } from '@/components/asana-import-dialog';
+import { LinearCsvImportDialog } from '@/components/linear-csv-import-dialog';
+import { JiraCsvImportDialog } from '@/components/jira-csv-import-dialog';
+import { CsvExportDialog } from '@/components/csv-export-dialog';
 import { useState } from 'react';
 
 export default function ImportPage() {
@@ -227,6 +230,150 @@ export default function ImportPage() {
                 <Button className="w-full" variant="outline" disabled>
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Coming Soon
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+
+        {/* Linear CSV Import */}
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer group border-purple-200 dark:border-purple-900">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg group-hover:bg-purple-200 dark:group-hover:bg-purple-800 transition-colors">
+                  <FileUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <CardTitle>Linear CSV</CardTitle>
+                  <CardDescription>Import from Linear CSV export</CardDescription>
+                </div>
+              </div>
+              <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                Active
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Import issues from Linear CSV export files. Preserves all metadata including cycles, priorities, and labels.
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600" />
+                Import issues with full metadata
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600" />
+                Preserve cycles and priorities
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-purple-600" />
+                Automatic RDF mapping
+              </li>
+            </ul>
+            <LinearCsvImportDialog
+              trigger={
+                <Button className="w-full">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import Linear CSV
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+
+        {/* Jira CSV Import */}
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer group border-orange-200 dark:border-orange-900">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-lg group-hover:bg-orange-200 dark:group-hover:bg-orange-800 transition-colors">
+                  <FileUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <CardTitle>Jira CSV</CardTitle>
+                  <CardDescription>Import from Jira CSV export</CardDescription>
+                </div>
+              </div>
+              <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                Active
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Import issues from Jira CSV export files. Supports epics, stories, tasks, and all custom fields.
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-orange-600" />
+                Import epics, stories, and tasks
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-orange-600" />
+                Preserve sprints and story points
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-orange-600" />
+                SRO ontology mapping
+              </li>
+            </ul>
+            <JiraCsvImportDialog
+              trigger={
+                <Button className="w-full">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import Jira CSV
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Export Section */}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight mb-4">Export Projects</h2>
+        <Card className="hover:shadow-lg transition-shadow border-green-200 dark:border-green-900">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                  <Upload className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <CardTitle>CSV Export</CardTitle>
+                  <CardDescription>Export to Linear or Jira CSV format</CardDescription>
+                </div>
+              </div>
+              <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                Active
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Export your project data to CSV format compatible with Linear or Jira. Includes all tasks, metadata, and relationships with column compatibility for easy import.
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
+                Linear-compatible CSV format
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
+                Jira-compatible CSV format
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
+                Maximum column similarity with other platforms
+              </li>
+            </ul>
+            <CsvExportDialog
+              trigger={
+                <Button className="w-full">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Export to CSV
                 </Button>
               }
             />

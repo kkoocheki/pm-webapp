@@ -101,24 +101,49 @@ export function backendTaskToTask(backendTask: BackendTask): Task {
 }
 
 /**
- * Convert frontend task to backend task create
+ * Convert frontend task to backend task create (for the Hono backend)
+ * Maps frontend field names to backend field names
  */
-export function taskToBackendTaskCreate(task: Partial<Task>): BackendTaskCreate {
+export function taskToBackendTaskCreate(task: Partial<Task>): Record<string, any> {
   // Calculate progress from status
-  let progress: number | null = null;
+  let progress: number | undefined = undefined;
   if (task.status === 'completed') progress = 100;
   else if (task.status === 'in-progress') progress = 50;
   else if (task.status === 'not-started') progress = 0;
+  else if (task.status === 'blocked') progress = 0;
 
-  return {
-    name: task.title || 'Untitled Task',
-    type: 'task',
-    start: task.startDate || null,
-    end: task.endDate || null,
-    progress,
-    open: task.status !== 'blocked',
-    parent: task.parentId || null,
+  // Map frontend status to RDF state
+  const stateMap: Record<TaskStatus, string> = {
+    'not-started': 'ToDo',
+    'in-progress': 'InProgress',
+    'completed': 'Completed',
+    'blocked': 'Blocked',
   };
+
+  // Map frontend priority to RDF priority
+  const priorityMap: Record<TaskPriority, string> = {
+    'urgent': 'Urgent',
+    'high': 'High',
+    'medium': 'Medium',
+    'low': 'Low',
+    'none': 'NoPriority',
+  };
+
+  const result: Record<string, any> = {};
+  
+  // Map frontend field names to backend field names
+  if (task.title !== undefined) result.text = task.title;
+  if (task.description !== undefined) result.description = task.description;
+  if (task.startDate !== undefined) result.start_date = task.startDate;
+  if (task.endDate !== undefined) result.end_date = task.endDate;
+  if (progress !== undefined) result.progress = progress;
+  if (task.status !== undefined) result.status = stateMap[task.status];
+  if (task.priority !== undefined) result.priority = priorityMap[task.priority];
+  if (task.itemType !== undefined) result.type = task.itemType;
+  if (task.parentId !== undefined) result.parent_token = task.parentId;
+  if (task.assignee !== undefined) result.assignee = task.assignee;
+
+  return result;
 }
 
 // ==================== Link/Dependency Mappers ====================

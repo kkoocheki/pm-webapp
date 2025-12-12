@@ -234,6 +234,72 @@ export const importService = {
     );
     return response;
   },
+
+  /**
+   * Import from Linear CSV file
+   */
+  async importCsvLinear(file: File, projectName: string, overwrite: boolean = false): Promise<BackendImportResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('project_name', projectName);
+    formData.append('overwrite', String(overwrite));
+
+    const response = await fetch(`${API_CONFIG.baseURL}${ENDPOINTS.importCsvLinear}`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Import failed');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Import from Jira CSV file
+   */
+  async importCsvJira(file: File, projectName: string, overwrite: boolean = false): Promise<BackendImportResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('project_name', projectName);
+    formData.append('overwrite', String(overwrite));
+
+    const response = await fetch(`${API_CONFIG.baseURL}${ENDPOINTS.importCsvJira}`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Import failed');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Export project to CSV format
+   */
+  async exportCsv(projectSlug: string, format: 'linear' | 'jira'): Promise<Blob> {
+    const response = await fetch(
+      `${API_CONFIG.baseURL}${ENDPOINTS.exportCsv(projectSlug, format)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/csv',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Export failed');
+    }
+
+    return response.blob();
+  },
 };
 
 // ==================== Analytics Services ====================

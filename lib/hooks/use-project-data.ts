@@ -6,7 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/services';
-import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
+import { DEFAULT_PROJECT_SLUG, API_CONFIG, ENDPOINTS } from '@/lib/api/config';
 import { backendProjectDetailToProject, taskToBackendTaskCreate, backendTaskToTask } from '@/lib/api/mappers';
 import { Task } from '@/lib/api/types';
 
@@ -43,13 +43,33 @@ export function useCreateTask(projectSlug: string = DEFAULT_PROJECT_SLUG) {
 
   return useMutation({
     mutationFn: async (taskData: Partial<Task>) => {
-      const backendTaskCreate = taskToBackendTaskCreate(taskData);
-      const backendTask = await api.tasks.createTask(projectSlug, backendTaskCreate);
-      return backendTaskToTask(backendTask);
+      // Convert frontend task format to backend format
+      const backendData = taskToBackendTaskCreate(taskData);
+      console.log('[useCreateTask] Creating task with data:', backendData);
+      
+      // Call the API directly with proper field names
+      const response = await fetch(`${API_CONFIG.baseURL}${ENDPOINTS.tasks(projectSlug)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(backendData),
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('[useCreateTask] Failed:', error);
+        throw new Error(`Failed to create task: ${error}`);
+      }
+      
+      const result = await response.json();
+      console.log('[useCreateTask] Success:', result);
+      return result;
     },
     onSuccess: () => {
       // Invalidate and refetch - React Query handles cache update
       queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectSlug) });
+    },
+    onError: (error) => {
+      console.error('[useCreateTask] Error:', error);
     },
   });
 }
@@ -62,13 +82,33 @@ export function useUpdateTask(projectSlug: string = DEFAULT_PROJECT_SLUG) {
 
   return useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: Partial<Task> }) => {
-      const backendTaskCreate = taskToBackendTaskCreate(updates);
-      const backendTask = await api.tasks.updateTask(projectSlug, taskId, backendTaskCreate);
-      return backendTaskToTask(backendTask);
+      // Convert frontend task format to backend format
+      const backendData = taskToBackendTaskCreate(updates);
+      console.log('[useUpdateTask] Updating task', taskId, 'with data:', backendData);
+      
+      // Call the API directly with proper field names
+      const response = await fetch(`${API_CONFIG.baseURL}${ENDPOINTS.task(projectSlug, taskId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(backendData),
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('[useUpdateTask] Failed:', error);
+        throw new Error(`Failed to update task: ${error}`);
+      }
+      
+      const result = await response.json();
+      console.log('[useUpdateTask] Success:', result);
+      return result;
     },
     onSuccess: () => {
       // Invalidate and refetch - React Query handles cache update
       queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectSlug) });
+    },
+    onError: (error) => {
+      console.error('[useUpdateTask] Error:', error);
     },
   });
 }
@@ -88,6 +128,17 @@ export function useDeleteTask(projectSlug: string = DEFAULT_PROJECT_SLUG) {
       // Invalidate and refetch - React Query handles cache update
       queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectSlug) });
     },
+  });
+}
+
+/**
+ * Hook to list all projects
+ */
+export function useProjectList() {
+  return useQuery({
+    queryKey: projectKeys.lists(),
+    queryFn: () => api.projects.listProjects(),
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 }
 

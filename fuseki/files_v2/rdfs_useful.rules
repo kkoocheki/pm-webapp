@@ -1,0 +1,234 @@
+# ============================================================================
+# RDFS USEFUL INFERENCE RULES
+# ============================================================================
+# Version: 2.0.0
+# Date: 2025-11-27
+#
+# Standard RDFS entailment rules plus useful extensions for Scrum PM ontology.
+# These rules provide foundational RDFS reasoning that complements OWL axioms.
+#
+# Based on: https://www.w3.org/TR/rdf11-mt/#rdfs-entailment
+# ============================================================================
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+
+# ============================================================================
+# SECTION 1: CORE RDFS ENTAILMENT RULES
+# ============================================================================
+
+# rdfs2: Domain inference
+# If property P has domain D, and X P Y, then X is of type D
+[rdfs2:
+    (?p rdfs:domain ?d)
+    (?x ?p ?y)
+    ->
+    (?x rdf:type ?d)
+]
+
+# rdfs3: Range inference  
+# If property P has range R, and X P Y, then Y is of type R
+[rdfs3:
+    (?p rdfs:range ?r)
+    (?x ?p ?y)
+    ->
+    (?y rdf:type ?r)
+]
+
+# rdfs5: Subproperty transitivity
+# If P1 is subproperty of P2, and P2 is subproperty of P3, then P1 is subproperty of P3
+[rdfs5:
+    (?p1 rdfs:subPropertyOf ?p2)
+    (?p2 rdfs:subPropertyOf ?p3)
+    ->
+    (?p1 rdfs:subPropertyOf ?p3)
+]
+
+# rdfs6: Property reflexivity
+# Every property is a subproperty of itself
+[rdfs6:
+    (?p rdf:type rdf:Property)
+    ->
+    (?p rdfs:subPropertyOf ?p)
+]
+
+# rdfs7: Subproperty inference
+# If P1 is subproperty of P2, and X P1 Y, then X P2 Y
+[rdfs7:
+    (?p1 rdfs:subPropertyOf ?p2)
+    (?x ?p1 ?y)
+    notEqual(?p1, ?p2)
+    ->
+    (?x ?p2 ?y)
+]
+
+# rdfs9: Subclass instance inference
+# If C1 is subclass of C2, and X is of type C1, then X is of type C2
+[rdfs9:
+    (?c1 rdfs:subClassOf ?c2)
+    (?x rdf:type ?c1)
+    notEqual(?c1, ?c2)
+    ->
+    (?x rdf:type ?c2)
+]
+
+# rdfs10: Class reflexivity
+# Every class is a subclass of itself
+[rdfs10:
+    (?c rdf:type rdfs:Class)
+    ->
+    (?c rdfs:subClassOf ?c)
+]
+
+# rdfs11: Subclass transitivity
+# If C1 is subclass of C2, and C2 is subclass of C3, then C1 is subclass of C3
+[rdfs11:
+    (?c1 rdfs:subClassOf ?c2)
+    (?c2 rdfs:subClassOf ?c3)
+    ->
+    (?c1 rdfs:subClassOf ?c3)
+]
+
+# rdfs12: Container membership property
+[rdfs12:
+    (?p rdf:type rdfs:ContainerMembershipProperty)
+    ->
+    (?p rdfs:subPropertyOf rdfs:member)
+]
+
+# rdfs13: Datatype subclass
+[rdfs13:
+    (?d rdf:type rdfs:Datatype)
+    ->
+    (?d rdfs:subClassOf rdfs:Literal)
+]
+
+
+# ============================================================================
+# SECTION 2: OWL EXTENSIONS FOR ENHANCED REASONING
+# ============================================================================
+
+# owl:inverseOf inference
+# If P1 is inverse of P2, and X P1 Y, then Y P2 X
+[owlInverse:
+    (?p1 owl:inverseOf ?p2)
+    (?x ?p1 ?y)
+    ->
+    (?y ?p2 ?x)
+]
+
+# owl:inverseOf symmetry
+# If P1 is inverse of P2, then P2 is inverse of P1
+[owlInverseSym:
+    (?p1 owl:inverseOf ?p2)
+    ->
+    (?p2 owl:inverseOf ?p1)
+]
+
+# owl:TransitiveProperty inference
+# If P is transitive, and X P Y, and Y P Z, then X P Z
+[owlTransitive:
+    (?p rdf:type owl:TransitiveProperty)
+    (?x ?p ?y)
+    (?y ?p ?z)
+    notEqual(?x, ?z)
+    ->
+    (?x ?p ?z)
+]
+
+# owl:SymmetricProperty inference
+# If P is symmetric, and X P Y, then Y P X
+[owlSymmetric:
+    (?p rdf:type owl:SymmetricProperty)
+    (?x ?p ?y)
+    ->
+    (?y ?p ?x)
+]
+
+# owl:equivalentClass inference (both directions)
+[owlEquivClass1:
+    (?c1 owl:equivalentClass ?c2)
+    (?x rdf:type ?c1)
+    ->
+    (?x rdf:type ?c2)
+]
+
+[owlEquivClass2:
+    (?c1 owl:equivalentClass ?c2)
+    (?x rdf:type ?c2)
+    ->
+    (?x rdf:type ?c1)
+]
+
+# owl:equivalentProperty inference
+[owlEquivProp1:
+    (?p1 owl:equivalentProperty ?p2)
+    (?x ?p1 ?y)
+    ->
+    (?x ?p2 ?y)
+]
+
+[owlEquivProp2:
+    (?p1 owl:equivalentProperty ?p2)
+    (?x ?p2 ?y)
+    ->
+    (?x ?p1 ?y)
+]
+
+# owl:sameAs inference
+[owlSameAs:
+    (?x owl:sameAs ?y)
+    (?x ?p ?o)
+    ->
+    (?y ?p ?o)
+]
+
+[owlSameAs2:
+    (?x owl:sameAs ?y)
+    (?s ?p ?x)
+    ->
+    (?s ?p ?y)
+]
+
+
+# ============================================================================
+# SECTION 3: LABEL AND ANNOTATION PROPAGATION
+# ============================================================================
+
+# Propagate labels from class to instances (optional - can be heavy)
+# Commented out by default - enable if needed
+# [labelFromClass:
+#     (?x rdf:type ?c)
+#     (?c rdfs:label ?label)
+#     noValue(?x rdfs:label)
+#     ->
+#     (?x rdfs:comment ?label)
+# ]
+
+
+# ============================================================================
+# SECTION 4: RESOURCE TYPING
+# ============================================================================
+
+# Type inference for subjects/objects of properties
+[typeSubject:
+    (?s ?p ?o)
+    notEqual(?p, rdf:type)
+    ->
+    (?s rdf:type rdfs:Resource)
+]
+
+[typeObject:
+    (?s ?p ?o)
+    notEqual(?p, rdf:type)
+    ->
+    (?o rdf:type rdfs:Resource)
+]
+
+
+# ============================================================================
+# END OF RDFS USEFUL RULES
+# ============================================================================

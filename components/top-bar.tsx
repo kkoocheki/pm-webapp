@@ -13,13 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 import { ModeToggle } from '@/components/mode-toggle';
@@ -43,16 +36,6 @@ export function TopBar() {
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
-      {/* Project Switcher */}
-      <Select defaultValue="project-1">
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select project" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="project-1">Main Project</SelectItem>
-          <SelectItem value="project-2">Demo Project</SelectItem>
-        </SelectContent>
-      </Select>
 
       {/* Search */}
       <div className="relative flex-1 max-w-md">
@@ -66,8 +49,6 @@ export function TopBar() {
 
       {/* Right Section */}
       <div className="ml-auto flex items-center gap-2">
-        {/* Import Dialog */}
-        <ImportDialog />
 
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative">

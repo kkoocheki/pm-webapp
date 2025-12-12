@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api/services';
 import { DEFAULT_PROJECT_SLUG } from '@/lib/api/config';
 import { ReasoningRequest, JiraImportRequest } from '@/lib/api/backend-types';
+import { projectKeys } from './use-project-data';
 
 // ==================== Import Hooks ====================
 
@@ -29,8 +30,8 @@ export function useImportTtl() {
       return api.import.importTtl(file, projectName, overwrite);
     },
     onSuccess: () => {
-      // Invalidate project list to show new project
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      // Invalidate all project queries to refresh data everywhere
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });
 }
@@ -67,8 +68,58 @@ export function useImportJira() {
   return useMutation({
     mutationFn: (request: JiraImportRequest) => api.import.importJira(request),
     onSuccess: () => {
-      // Invalidate project list to show new project
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      // Invalidate all project queries to refresh data everywhere
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
+    },
+  });
+}
+
+/**
+ * Hook to import a Linear CSV file
+ */
+export function useImportCsvLinear() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      file,
+      projectName,
+      overwrite,
+    }: {
+      file: File;
+      projectName: string;
+      overwrite?: boolean;
+    }) => {
+      return api.import.importCsvLinear(file, projectName, overwrite);
+    },
+    onSuccess: () => {
+      // Invalidate all project queries to refresh data everywhere
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
+    },
+  });
+}
+
+/**
+ * Hook to import a Jira CSV file
+ */
+export function useImportCsvJira() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      file,
+      projectName,
+      overwrite,
+    }: {
+      file: File;
+      projectName: string;
+      overwrite?: boolean;
+    }) => {
+      return api.import.importCsvJira(file, projectName, overwrite);
+    },
+    onSuccess: () => {
+      // Invalidate all project queries to refresh data everywhere
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });
 }

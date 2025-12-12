@@ -1,8 +1,8 @@
 services:
   fuseki:
     build:
-      context: ./fuseki/docker
-      dockerfile: Dockerfile
+      context: ./fuseki
+      dockerfile: docker/Dockerfile
       args:
         JENA_VERSION: "5.6.0"
     image: pm-fuseki:5.6.0
@@ -13,10 +13,9 @@ services:
       - ./fuseki/config.ttl:/fuseki/config.ttl:ro
       - ./fuseki/rules:/fuseki/rules:ro
       - ./fuseki/ontology:/fuseki/ontology:ro
-      - ./fuseki/databases:/fuseki/databases
+      - fuseki-data:/fuseki/databases
     environment:
       - JAVA_OPTIONS=-Xmx2g
-    command: ["--config=/fuseki/config.ttl"]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3030/$$/ping || exit 1"]
       interval: 10s
@@ -29,3 +28,7 @@ services:
 networks:
   pm-network:
     driver: bridge
+
+volumes:
+  fuseki-data:
+    driver: local

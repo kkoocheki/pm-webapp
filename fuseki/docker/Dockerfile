@@ -15,110 +15,53 @@
 
 ## Apache Jena Fuseki server Dockerfile.
 
-## This Dockefile builds a reduced footprint container.
-
 ARG JAVA_VERSION=21
 
-ARG ALPINE_VERSION=3.21.2
+FROM eclipse-temurin:${JAVA_VERSION}-jdk
+
 ARG JENA_VERSION=""
-
-# Internal, passed between stages.
-ARG FUSEKI_DIR=/fuseki
-ARG FUSEKI_JAR=jena-fuseki-server-${JENA_VERSION}.jar
-ARG JAVA_MINIMAL=/opt/java-minimal
-
-## ---- Stage: Download and build java.
-FROM eclipse-temurin:${JAVA_VERSION}-alpine AS base
-
-ARG JAVA_MINIMAL
-ARG JENA_VERSION
-ARG FUSEKI_DIR
-ARG FUSEKI_JAR
-ARG REPO=https://repo1.maven.org/maven2
-ARG JAR_URL=${REPO}/org/apache/jena/jena-fuseki-server/${JENA_VERSION}/${FUSEKI_JAR}
+ENV FUSEKI_VERSION=${JENA_VERSION}
 
 RUN [ "${JENA_VERSION}" != "" ] || { echo -e '\n**** Set JENA_VERSION ****\n' ; exit 1 ; }
-RUN echo && echo "==== Docker build for Apache Jena Fuseki ${JENA_VERSION} ====" && echo
 
-# Alpine: For objcopy used in jlink
-RUN apk add --no-cache curl binutils
+# Install wget
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
-## -- Fuseki installed and runs in /fuseki.
-WORKDIR $FUSEKI_DIR
+# Create Fuseki directory
+RUN mkdir -p /fuseki
 
-## -- Download the jar file.
-COPY download.sh .
-RUN chmod a+x download.sh
+# Download and extract Fuseki
+WORKDIR /tmp
+RUN wget -q --show-progress https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-${JENA_VERSION}.tar.gz && \
+    tar -xzf apache-jena-fuseki-${JENA_VERSION}.tar.gz && \
+    cp -r apache-jena-fuseki-${JENA_VERSION}/* /fuseki/ && \
+    rm -rf apache-jena-fuseki-${JENA_VERSION}* && \
+    chmod +x /fuseki/fuseki-server
 
-# Download, with check of the SHA1 checksum.
-RUN ./download.sh --chksum sha1 "$JAR_URL"
+# Create non-root user
+RUN useradd -u 1001 -m -s /bin/bash fuseki
 
-## -- Alternatives to download : copy already downloaded.
-## COPY ${FUSEKI_JAR} .
+# Copy example data for initialization
+# Note: COPY paths are relative to build context (fuseki/)
+COPY example/example_project_scrum_aligned.ttl /tmp/example_data.ttl
 
-## Use Docker ADD - does not retry, does not check checksum, and may run every build.
-## ADD "$JAR_URL"
+# Create directories and pre-load example data into TDB2
+# Use tdbloader directly from Fuseki JAR
+RUN mkdir -p /fuseki/databases/pm && \
+    mkdir -p /fuseki/logs && \
+    java -cp /fuseki/fuseki-server.jar tdb2.tdbloader --loc=/fuseki/databases/pm /tmp/example_data.ttl && \
+    rm /tmp/example_data.ttl && \
+    chown -R fuseki:fuseki /fuseki
 
-## -- Make reduced Java JDK
+# Switch to non-root user
+USER fuseki
 
-ARG JDEPS_EXTRA="jdk.crypto.cryptoki,jdk.crypto.ec"
-RUN \
-  JDEPS="$(jdeps --multi-release base --print-module-deps --ignore-missing-deps ${FUSEKI_JAR})"  && \
-  jlink \
-        --compress 2 --strip-debug --no-header-files --no-man-pages \
-        --output "${JAVA_MINIMAL}" \
-        --add-modules "${JDEPS},${JDEPS_EXTRA}"
+WORKDIR /fuseki
 
-ADD entrypoint.sh .
-ADD log4j2.properties .
-
-## ---- Stage: Build runtime
-FROM alpine:${ALPINE_VERSION}
-
-## Import ARGs
-ARG JENA_VERSION
-ARG JAVA_MINIMAL
-ARG FUSEKI_DIR
-ARG FUSEKI_JAR
-
-COPY --from=base /opt/java-minimal /opt/java-minimal
-COPY --from=base /fuseki /fuseki
-
-WORKDIR $FUSEKI_DIR
-
-ARG LOGS=${FUSEKI_DIR}/logs
-ARG DATA=${FUSEKI_DIR}/databases
-
-ARG JENA_USER=fuseki
-ARG JENA_GROUP=$JENA_USER
-ARG JENA_GID=1000
-ARG JENA_UID=1000
-
-# Run as this user
-# -H : no home directory
-# -D : no password
-RUN addgroup -g "${JENA_GID}" "${JENA_GROUP}" && \
-    adduser "${JENA_USER}" -G "${JENA_GROUP}" -s /bin/ash -u "${JENA_UID}" -H -D
-
-RUN mkdir --parents "${FUSEKI_DIR}" && \
-    chown -R $JENA_USER ${FUSEKI_DIR}
-
-USER $JENA_USER
-
-RUN \
-    mkdir -p $LOGS && \
-    mkdir -p $DATA && \
-    chmod a+x entrypoint.sh
-
-## Default environment variables.
-ENV \
-    JAVA_HOME=${JAVA_MINIMAL}           \
-    JAVA_OPTIONS="-Xmx2048m -Xms2048m"  \
-    JENA_VERSION=${JENA_VERSION}        \
-    FUSEKI_JAR="${FUSEKI_JAR}"          \
-    FUSEKI_DIR="${FUSEKI_DIR}"
+# Set environment variables
+ENV FUSEKI_HOME=/fuseki \
+    FUSEKI_BASE=/fuseki
 
 EXPOSE 3030
 
-ENTRYPOINT ["./entrypoint.sh" ]
-CMD []
+CMD ["/fuseki/fuseki-server", "--config=/fuseki/config.ttl"]

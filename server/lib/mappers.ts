@@ -16,10 +16,35 @@ export function generateToken(text: string): string {
 }
 
 /**
- * Generate a unique token with timestamp
+ * Generate a unique token with timestamp (legacy - for non-task items)
  */
 export function generateUniqueToken(prefix: string = 'item'): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+/**
+ * Generate project prefix from project name (first 3 letters, uppercase)
+ * Examples: "ProjectAlpha" -> "PRO", "Marketing Campaign" -> "MAR"
+ */
+export function generateProjectPrefix(projectName: string): string {
+  // Remove special characters and get letters only
+  const letters = projectName.replace(/[^a-zA-Z]/g, '');
+
+  // Take first 3 letters and uppercase
+  const prefix = letters.substring(0, 3).toUpperCase();
+
+  // If less than 3 letters, pad with 'X'
+  return prefix.padEnd(3, 'X');
+}
+
+/**
+ * Generate task ID in Jira/Linear style: PREFIX-NUMBER
+ * @param projectPrefix - 3-letter project prefix (e.g., "PRO")
+ * @param taskNumber - Sequential task number (e.g., 123)
+ * @returns Task ID (e.g., "PRO-123")
+ */
+export function generateTaskId(projectPrefix: string, taskNumber: number): string {
+  return `${projectPrefix}-${taskNumber}`;
 }
 
 /**
